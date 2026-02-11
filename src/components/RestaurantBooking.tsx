@@ -27,6 +27,28 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Criar a reserva
+    const newBooking = {
+      id: Date.now(),
+      restaurantId: restaurant.id,
+      customerName: bookingData.name,
+      customerEmail: bookingData.email,
+      customerPhone: bookingData.phone,
+      date: bookingData.date,
+      time: bookingData.time,
+      guests: parseInt(bookingData.guests),
+      specialRequests: bookingData.specialRequests,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Salvar no localStorage
+    const bookingsData = localStorage.getItem('tukula_bookings');
+    const bookings = bookingsData ? JSON.parse(bookingsData) : [];
+    bookings.push(newBooking);
+    localStorage.setItem('tukula_bookings', JSON.stringify(bookings));
+    
     setIsBooked(true);
   };
 
