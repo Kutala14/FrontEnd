@@ -3,7 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 interface LoginProps {
   onBack: () => void;
-  onLogin: (user: { email: string; name: string; type: 'user' | 'restaurant' }) => void;
+  onLogin: (user: { name: string; type: string; accessToken: string }) => void;
   onSwitchToRegister: () => void;
 }
 
@@ -45,16 +45,13 @@ export function Login({ onBack, onLogin, onSwitchToRegister }: LoginProps) {
       return;
     }
 
-    // Salvar token e sessão
-    localStorage.setItem('tukula_token', data.token);
-
+    localStorage.setItem('tukula_token', data.access_token);
     localStorage.setItem(
       'tukula_session',
       JSON.stringify({
-        email: data.user.email,
         name: data.user.name,
         type: data.user.type,
-        restaurantId: data.user.restaurantId
+        userId: data.user.user_id
       })
     );
 
@@ -189,15 +186,6 @@ export function Login({ onBack, onLogin, onSwitchToRegister }: LoginProps) {
               Registar-se
             </button>
           </p>
-        </div>
-
-        {/* Demo Credentials */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <p className="text-sm font-medium text-blue-900 mb-2">Contas de demonstração:</p>
-          <div className="space-y-1 text-xs text-blue-800">
-            <p><strong>Utilizador:</strong> user@tukula.ao / senha123</p>
-            <p><strong>Restaurante:</strong> restaurant@tukula.ao / senha123</p>
-          </div>
         </div>
       </div>
     </div>
