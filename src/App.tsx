@@ -41,10 +41,12 @@ export interface Restaurant {
 }
 
 interface UserSession {
+  userId: number;
   email: string;
   name: string;
-  type: 'user' | 'restaurant';
+  type: string;
   restaurantId?: number;
+  accessToken: string;
 }
 
 export const destinations: Destination[] = [
@@ -122,44 +124,6 @@ export default function App() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [userSession, setUserSession] = useState<UserSession | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-
-  useEffect(() => {
-    initializeApp();
-  }, []);
-
-  const initializeApp = () => {
-    // Criar contas demo se não existirem
-    const usersData = localStorage.getItem('tukula_users');
-    if (!usersData) {
-      const demoUsers = [
-        {
-          id: 1,
-          name: 'João Silva',
-          email: 'user@tukula.ao',
-          password: 'senha123',
-          type: 'user'
-        },
-        {
-          id: 2,
-          name: 'Restaurante Sabor Angolano',
-          email: 'restaurant@tukula.ao',
-          password: 'senha123',
-          type: 'restaurant',
-          phone: '+244 923 456 789',
-          location: 'Luanda, Talatona',
-          cuisine: 'Angolana',
-          restaurantId: 1
-        }
-      ];
-      localStorage.setItem('tukula_users', JSON.stringify(demoUsers));
-    }
-
-    // Verificar se há sessão ativa
-    const sessionData = localStorage.getItem('tukula_session');
-    if (sessionData) {
-      setUserSession(JSON.parse(sessionData));
-    }
-  };
 
   const handleNavigate = (page: Page) => {
     setCurrentPage(page);

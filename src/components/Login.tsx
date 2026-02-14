@@ -3,7 +3,14 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 interface LoginProps {
   onBack: () => void;
-  onLogin: (user: { name: string; type: string; accessToken: string }) => void;
+  onLogin: (
+    user: { 
+      userId: number;
+      email: string;
+      name: string;
+      type: string;
+      restaurantId?: number;
+      accessToken: string }) => void;
   onSwitchToRegister: () => void;
 }
 
@@ -23,7 +30,7 @@ export function Login({ onBack, onLogin, onSwitchToRegister }: LoginProps) {
     return;
   }
 
-  const apiUrl = (import.meta.env.API_URL as string) || 'http://localhost:5000';
+  const apiUrl = (import.meta.env.VITE_API_URL as string);
   
   try {
     const response = await fetch(`${apiUrl}/auth/`, {
@@ -49,8 +56,10 @@ export function Login({ onBack, onLogin, onSwitchToRegister }: LoginProps) {
     localStorage.setItem(
       'tukula_session',
       JSON.stringify({
+        email: data.user.email,
         name: data.user.name,
         type: data.user.type,
+        restaurantId: data.user.restaurant_id,
         userId: data.user.user_id
       })
     );

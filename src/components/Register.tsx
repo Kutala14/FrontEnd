@@ -1,10 +1,33 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly API_URL?: string;
+  // add more env variables here as needed
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Building2, Phone, MapPin, ArrowLeft } from 'lucide-react';
 
 interface RegisterProps {
   onBack: () => void;
-  onRegister: (user: { email: string; name: string; type: 'user' | 'restaurant' }) => void;
+  onRegister: (
+    user: { 
+      userId: number;
+      email: string;
+      name: string;
+      type: string;
+      restaurantId?: number;
+      accessToken: string }) => void;
   onSwitchToLogin: () => void;
+}
+
+interface Cousine {
+  id_cousine: number;
+  name: string;
 }
 
 export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps) {
@@ -22,6 +45,7 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [cousine, setCousines] = useState<Cousine[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,23 +67,13 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
       return;
     }
 
-    if (userType === 'restaurant' && (!formData.phone || !formData.location || !formData.cuisine)) {
+    if (userType === 'restaurant' && (!formData.phone || !formData.location)) {
       setError('Restaurantes devem preencher todos os campos');
       return;
     }
 
-    // Buscar usuários existentes
-    const usersData = localStorage.getItem('tukula_users');
-    const users = usersData ? JSON.parse(usersData) : [];
-
-    // Verificar se email já existe
-    if (users.some((u: any) => u.email === formData.email)) {
-      setError('Este email já está registado');
-      return;
-    }
-
     // Criar novo usuário
-    const apiUrl = (import.meta.env.API_URL as string) || 'http://localhost:5000';
+    const apiUrl = (import.meta.env.VITE_API_URL as string);
     try {
       const response = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
@@ -75,7 +89,7 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.message || 'Erro ao criar conta');
+        setError(data.error || 'Erro ao criar conta');
         return;
       }
       setError('Conta criada com sucesso! Redirecionando...');
@@ -84,6 +98,31 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
     }
   };
 
+  const handleGetcousines = async () => {
+    const apiUrl = (import.meta.env.VITE_API_URL as string);
+    try {
+      const response = await fetch(`${apiUrl}/restaurants/cuisines`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar tipos de cozinha');
+      }
+
+      const cousines = await response.json();
+      setCousines(cousines);
+    } catch (error) {
+      console.error('Erro ao buscar tipos de cozinha:', error);
+    }
+  };
+  
+  // Buscar tipos de cozinha ao montar o componente
+  useState(() => {
+    handleGetcousines();
+  });
+  
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
       <button
@@ -224,12 +263,12 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">Selecione...</option>
-                    <option value="Angolana">Angolana</option>
-                    <option value="Portuguesa">Portuguesa</option>
-                    <option value="Brasileira">Brasileira</option>
-                    <option value="Italiana">Italiana</option>
-                    <option value="Internacional">Internacional</option>
-                    <option value="Frutos do Mar">Frutos do Mar</option>
+                    {cousine.map((cuisine) => (
+                      <option key={cuisine.id_cousine} value={cuisine.id_cousine}>
+                        {cuisine.name}
+                      </option>
+                    ))}
+
                   </select>
                 </div>
               </>
