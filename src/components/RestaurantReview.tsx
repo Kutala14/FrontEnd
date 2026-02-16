@@ -3,6 +3,7 @@ import { ArrowLeft, Star, CheckCircle, MessageSquare, Calendar, User, Mail, Spar
 import { Restaurant } from '../App';
 import { UserSession } from '../types/session';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useSession } from '../context/SessionProvider';
 
 interface RestaurantReviewProps {
   restaurant: Restaurant;
@@ -21,6 +22,7 @@ interface ReviewFormState {
 }
 
 export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, onRequireAuth }: RestaurantReviewProps) {
+  const { fetchWithAuth } = useSession();
   const [reviewData, setReviewData] = useState<ReviewFormState>({
     rating: 0,
     visitDate: '',
@@ -31,6 +33,8 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedUser, setSubmittedUser] = useState<{ name: string; email: string } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const apiBase = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replace(/\/$/, '');
 
   const highlightOptions = useMemo(() => [
     'Serviço impecável',
@@ -67,6 +71,7 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
     const newReview = {
       id: Date.now(),
       restaurantId: restaurant.id,
@@ -87,25 +92,34 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
       const parsed = existing ? JSON.parse(existing) : [];
       localStorage.setItem('tukula_reviews', JSON.stringify([newReview, ...parsed]));
 
-      const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
-      if (apiUrl) {
-        try {
-          await fetch(`${apiUrl}/reviews/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              restaurant_id: restaurant.id,
-              rating: reviewData.rating,
-              comment: reviewData.comment.trim(),
-              visit_date: reviewData.visitDate,
-              experience_type: reviewData.experienceType,
-              highlights: reviewData.highlights,
-              customer_name: userSession.name,
-              customer_email: userSession.email
-            })
-          });
-        } catch (error) {
-          console.error('Erro ao sincronizar review com o servidor:', error);
+      if (apiBase) {
+        const response = await fetchWithAuth(`${apiBase}/reviews/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userSession.userId,
+            restaurant_id: restaurant.id,
+            rating: reviewData.rating,
+            comment: reviewData.comment.trim(),
+            visit_date: reviewData.visitDate || null,
+            experience_type: reviewData.experienceType,
+            highlights: reviewData.highlights,
+          })
+        });
+
+        if (!response.ok) {
+          let errorMessage = 'Não foi possível publicar a avaliação.';
+          try {
+            const payload = await response.json();
+            const candidate = (payload as { error?: string })?.error;
+            if (candidate) {
+              errorMessage = candidate;
+            }
+          } catch {
+            // ignore parse errors
+          }
+
+          throw new Error(errorMessage);
         }
       }
 
@@ -113,6 +127,7 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
       setIsSubmitted(true);
     } catch (error) {
       console.error('Erro ao guardar review:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Erro ao guardar review. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -348,6 +363,9 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
             >
               {isSubmitting ? 'Enviando...' : 'Publicar Avaliação'}
             </button>
+            {submitError && (
+              <p className="text-sm text-red-600 text-center">{submitError}</p>
+            )}
             <p className="text-xs text-gray-500 text-center">
               A sua avaliação pode ser destacada no perfil do restaurante e no dashboard do parceiro.
             </p>

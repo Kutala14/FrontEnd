@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Upload, MapPin, Phone, Clock, Globe, Image as ImageIcon, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Save, MapPin, Phone, Clock, Image as ImageIcon } from 'lucide-react';
 import { useSession } from '../../context/SessionProvider';
 
 interface RestaurantManagementProps {
@@ -10,16 +10,23 @@ interface RestaurantData {
   id: number;
   name: string;
   description: string;
-  cuisine_id: string;
-  location_id: string;
+  cuisine_id: number | null;
+  location: string;
   phone: string;
-  email: string;
   openHours: string;
   priceRange: string;
   image: string;
-  isActive: boolean;
-  website?: string;
   specialties: string[];
+}
+
+interface CuisineOption {
+  id: number;
+  name: string;
+}
+
+interface LocationOption {
+  id: number;
+  full_address: string;
 }
 
 export function RestaurantManagement({ restaurantId }: RestaurantManagementProps) {
@@ -27,21 +34,19 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
     id: restaurantId,
     name: '',
     description: '',
-    cuisine_id: '',
-    location_id: '',
+    cuisine_id: null,
+    location: '',
     phone: '',
-    email: '',
     openHours: '',
     priceRange: '$$',
     image: '',
-    isActive: true,
-    website: '',
-    specialties: []
+    specialties: [],
   });
-
   const [newSpecialty, setNewSpecialty] = useState('');
+  const [cuisines, setCuisines] = useState<CuisineOption[]>([]);
+  const [locations, setLocations] = useState<LocationOption[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState('');
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { fetchWithAuth } = useSession();
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -51,41 +56,50 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
 
   const loadRestaurantData = async () => {
     try {
-      const endpoint = apiUrl ? `${apiUrl}/restaurants/${restaurantId}` : `/api/restaurants/${restaurantId}`;
-      const response = await fetchWithAuth(endpoint);
+      const restaurantEndpoint = apiUrl ? `${apiUrl}/restaurants/${restaurantId}` : `/api/restaurants/${restaurantId}`;
+      const cuisinesEndpoint = apiUrl ? `${apiUrl}/restaurants/cuisines` : '/api/restaurants/cuisines';
+      const locationsEndpoint = apiUrl ? `${apiUrl}/restaurants/locations` : '/api/restaurants/locations';
 
-      if (!response.ok) {
-        throw new Error("Erro ao buscar restaurante");
+      const [restaurantResponse, cuisinesResponse, locationsResponse] = await Promise.all([
+        fetchWithAuth(restaurantEndpoint),
+        fetch(cuisinesEndpoint),
+        fetch(locationsEndpoint),
+      ]);
+
+      if (!restaurantResponse.ok) {
+        throw new Error('Erro ao buscar restaurante');
       }
 
-      const data = await response.json();
+      const data = await restaurantResponse.json();
+      const cuisinesData = cuisinesResponse.ok ? await cuisinesResponse.json() : [];
+      const locationsData = locationsResponse.ok ? await locationsResponse.json() : [];
+
+      setCuisines(Array.isArray(cuisinesData) ? cuisinesData : []);
+      setLocations(Array.isArray(locationsData) ? locationsData : []);
 
       setRestaurantData({
         id: data.id,
         name: data.name || '',
         description: data.description || '',
-        cuisine_id: data.cuisine_id ? data.cuisine_id : '',
-        location_id: data.location_id ? data.location_id : '',
+        cuisine_id: data.cuisine_id ?? null,
+        location: data.location || '',
         phone: data.phone || '',
-        email: '', // email vem do User, não do Restaurant
         openHours: data.open_hours || '',
         priceRange: data.price_range || '$$',
         image: data.image_url || '',
-        isActive: true, // ainda não existe no backend
-        website: '',
-        specialties: [] // ainda não está modelado no backend
+        specialties: Array.isArray(data.specialties) ? data.specialties : [],
       });
 
     } catch (error) {
       console.error(error);
-      setSaveMessage("Erro ao carregar restaurante");
+      setSaveMessage({ type: 'error', text: 'Erro ao carregar restaurante' });
     }
   };
 
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSaveMessage('');
+    setSaveMessage(null);
 
     try {
       const endpoint = apiUrl ? `${apiUrl}/restaurants/${restaurantId}` : `/api/restaurants/${restaurantId}`;
@@ -102,8 +116,9 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
           open_hours: restaurantData.openHours,
           price_range: restaurantData.priceRange,
           image_url: restaurantData.image,
-          cuisine_id: restaurantData.cuisine_id || null,
-          location_id: restaurantData.location_id || null
+          cuisine_id: restaurantData.cuisine_id,
+          location: restaurantData.location.trim() || null,
+          specialties: restaurantData.specialties,
         })
       });
 
@@ -111,68 +126,59 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
         throw new Error("Erro ao atualizar restaurante");
       }
 
-      setSaveMessage("Dados guardados com sucesso 🔥");
+      setSaveMessage({ type: 'success', text: 'Dados guardados com sucesso 🔥' });
 
     } catch (error) {
       console.error(error);
-      setSaveMessage("Erro ao salvar alterações");
+      setSaveMessage({ type: 'error', text: 'Erro ao salvar alterações' });
     }
 
     setIsSaving(false);
-    setTimeout(() => setSaveMessage(''), 3000);
+    setTimeout(() => setSaveMessage(null), 3000);
   };
 
   const addSpecialty = () => {
-    if (newSpecialty.trim() && !restaurantData.specialties.includes(newSpecialty.trim())) {
-      setRestaurantData({
-        ...restaurantData,
-        specialties: [...restaurantData.specialties, newSpecialty.trim()]
-      });
+    const value = newSpecialty.trim();
+    if (!value) return;
+
+    const exists = restaurantData.specialties.some((item) => item.toLowerCase() === value.toLowerCase());
+    if (exists) {
       setNewSpecialty('');
+      return;
     }
+
+    setRestaurantData((prev) => ({
+      ...prev,
+      specialties: [...prev.specialties, value],
+    }));
+    setNewSpecialty('');
   };
 
-  const removeSpecialty = (specialty: string) => {
-    setRestaurantData({
-      ...restaurantData,
-      specialties: restaurantData.specialties.filter(s => s !== specialty)
-    });
+  const removeSpecialty = (name: string) => {
+    setRestaurantData((prev) => ({
+      ...prev,
+      specialties: prev.specialties.filter((item) => item !== name),
+    }));
   };
 
   return (
     <div className="p-4 lg:p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div>
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Meu Restaurante</h1>
           <p className="text-gray-600">Gerencie as informações do seu restaurante</p>
         </div>
-        <button
-          onClick={() => setRestaurantData({ ...restaurantData, isActive: !restaurantData.isActive })}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
-            restaurantData.isActive
-              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          {restaurantData.isActive ? (
-            <>
-              <ToggleRight className="size-5" />
-              <span className="hidden sm:inline">Ativo</span>
-            </>
-          ) : (
-            <>
-              <ToggleLeft className="size-5" />
-              <span className="hidden sm:inline">Inativo</span>
-            </>
-          )}
-        </button>
       </div>
 
       {/* Success Message */}
       {saveMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
-          {saveMessage}
+        <div className={`px-4 py-3 rounded-xl border ${
+          saveMessage.type === 'success'
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          {saveMessage.text}
         </div>
       )}
 
@@ -232,33 +238,20 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
               Tipo de Cozinha *
             </label>
             <select
-              value={restaurantData.cuisine_id}
-              onChange={(e) => setRestaurantData({ ...restaurantData, cuisine_id: e.target.value })}
+              value={restaurantData.cuisine_id ?? ''}
+              onChange={(e) =>
+                setRestaurantData({
+                  ...restaurantData,
+                  cuisine_id: e.target.value ? Number(e.target.value) : null,
+                })
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               <option value="">Selecione...</option>
-              <option value="Angolana">Angolana</option>
-              <option value="Portuguesa">Portuguesa</option>
-              <option value="Brasileira">Brasileira</option>
-              <option value="Italiana">Italiana</option>
-              <option value="Internacional">Internacional</option>
-              <option value="Frutos do Mar">Frutos do Mar</option>
-              <option value="Churrasco">Churrasco</option>
-              <option value="Vegetariana">Vegetariana</option>
+              {cuisines.map((cuisine) => (
+                <option key={cuisine.id} value={cuisine.id}>{cuisine.name}</option>
+              ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email *
-            </label>
-            <input
-              type="email"
-              value={restaurantData.email}
-              onChange={(e) => setRestaurantData({ ...restaurantData, email: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="contato@restaurante.ao"
-            />
           </div>
 
           <div>
@@ -282,11 +275,17 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
               <input
                 type="text"
-                value={restaurantData.location_id}
-                onChange={(e) => setRestaurantData({ ...restaurantData, location_id: e.target.value })}
+                list="restaurant-locations"
+                value={restaurantData.location}
+                onChange={(e) => setRestaurantData({ ...restaurantData, location: e.target.value })}
                 className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Luanda, Talatona"
               />
+              <datalist id="restaurant-locations">
+                {locations.map((location) => (
+                  <option key={location.id} value={location.full_address} />
+                ))}
+              </datalist>
             </div>
           </div>
 
@@ -321,22 +320,6 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
               <option value="$$$$">$$$$ - Premium</option>
             </select>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Website (opcional)
-            </label>
-            <div className="relative">
-              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
-              <input
-                type="url"
-                value={restaurantData.website || ''}
-                onChange={(e) => setRestaurantData({ ...restaurantData, website: e.target.value })}
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="https://www.meurestaurante.ao"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="mt-4">
@@ -353,46 +336,54 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
         </div>
       </div>
 
-      {/* Specialties */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="font-bold text-lg mb-4">Especialidades</h3>
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newSpecialty}
-              onChange={(e) => setNewSpecialty(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
-              placeholder="Ex: Muamba de Galinha"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-            <button
-              onClick={addSpecialty}
-              className="px-6 py-3 bg-gradient-to-r from-red-600 to-yellow-500 text-white rounded-xl font-medium hover:shadow-lg transition-shadow"
-            >
-              Adicionar
-            </button>
-          </div>
 
-          {restaurantData.specialties.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {restaurantData.specialties.map((specialty, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-red-50 to-yellow-50 border border-red-200 rounded-lg"
-                >
-                  <span className="text-sm font-medium text-gray-900">{specialty}</span>
-                  <button
-                    onClick={() => removeSpecialty(specialty)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            value={newSpecialty}
+            onChange={(e) => setNewSpecialty(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addSpecialty();
+              }
+            }}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="Ex: Muamba de galinha"
+          />
+          <button
+            type="button"
+            onClick={addSpecialty}
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-black"
+          >
+            Adicionar
+          </button>
         </div>
+
+        {restaurantData.specialties.length === 0 ? (
+          <p className="text-sm text-gray-500">Sem especialidades cadastradas.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {restaurantData.specialties.map((specialty) => (
+              <span
+                key={specialty}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm bg-red-50 text-red-700 border border-red-200"
+              >
+                {specialty}
+                <button
+                  type="button"
+                  onClick={() => removeSpecialty(specialty)}
+                  className="text-red-700 hover:text-red-900"
+                  aria-label={`Remover ${specialty}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Save Button */}

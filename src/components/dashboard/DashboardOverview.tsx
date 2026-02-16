@@ -9,6 +9,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { useSession } from '../../context/SessionProvider';
 
 interface DashboardOverviewProps {
   restaurantId: number;
@@ -44,16 +45,28 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
 
   const [popularDishes, setPopularDishes] = useState<PopularDish[]>([]);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const { fetchWithAuth } = useSession();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     loadDashboardData();
   }, [restaurantId]);
 
-  const loadDashboardData = () => {
-    // Carregar reservas
-    const bookingsData = localStorage.getItem('tukula_bookings');
-    const allBookings = bookingsData ? JSON.parse(bookingsData) : [];
-    const restaurantBookings = allBookings.filter((b: any) => b.restaurantId === restaurantId);
+  const loadDashboardData = async () => {
+    const reservationsEndpoint = apiUrl
+      ? `${apiUrl}/reservations/restaurant/${restaurantId}`
+      : `/api/reservations/restaurant/${restaurantId}`;
+    const reviewsEndpoint = apiUrl
+      ? `${apiUrl}/reviews/?restaurant_id=${restaurantId}`
+      : `/api/reviews/?restaurant_id=${restaurantId}`;
+
+    const [reservationsResponse, reviewsResponse] = await Promise.all([
+      fetchWithAuth(reservationsEndpoint),
+      fetch(reviewsEndpoint),
+    ]);
+
+    const restaurantBookings = reservationsResponse.ok ? await reservationsResponse.json() : [];
+    const restaurantReviews = reviewsResponse.ok ? await reviewsResponse.json() : [];
 
     // Calcular estatísticas
     const now = new Date();
@@ -61,12 +74,12 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const todayBookings = restaurantBookings.filter((b: any) => b.date === today).length;
+    const todayBookings = restaurantBookings.filter((b: any) => b.reservation_date === today).length;
     const weekBookings = restaurantBookings.filter((b: any) => 
-      new Date(b.createdAt) >= weekAgo
+      new Date(b.created_at) >= weekAgo
     ).length;
     const monthBookings = restaurantBookings.filter((b: any) => 
-      new Date(b.createdAt) >= monthAgo
+      new Date(b.created_at) >= monthAgo
     ).length;
 
     const confirmedBookings = restaurantBookings.filter((b: any) => b.status === 'confirmed').length;
@@ -75,11 +88,6 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
     // Calcular receita estimada (assumindo 50 USD por pessoa)
     const totalRevenue = confirmedBookings * 50;
 
-    // Carregar avaliações
-    const reviewsData = localStorage.getItem('tukula_reviews');
-    const allReviews = reviewsData ? JSON.parse(reviewsData) : [];
-    const restaurantReviews = allReviews.filter((r: any) => r.restaurantId === restaurantId);
-    
     const avgRating = restaurantReviews.length > 0
       ? restaurantReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / restaurantReviews.length
       : 4.5;
@@ -97,7 +105,7 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
 
     // Reservas recentes
     const recent = restaurantBookings
-      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
     setRecentBookings(recent);
 
@@ -251,15 +259,15 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
               <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                 <div className="flex items-center gap-4">
                   <div className="hidden sm:flex items-center justify-center w-12 h-12 bg-gradient-to-br from-red-600 to-yellow-500 rounded-xl text-white font-bold">
-                    {booking.guests}
+                    {booking.people_count}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{booking.customerName}</p>
+                    <p className="font-semibold text-gray-900">{booking.customer_name}</p>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar className="size-3" />
-                      <span>{booking.date}</span>
+                      <span>{booking.reservation_date}</span>
                       <Clock className="size-3 ml-2" />
-                      <span>{booking.time}</span>
+                      <span>{booking.reservation_time || '-'}</span>
                     </div>
                   </div>
                 </div>

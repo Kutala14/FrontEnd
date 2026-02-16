@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { MapPin, Star, ChevronRight, Search } from 'lucide-react';
-import { Page, Destination, destinations } from '../App';
+import { Page, Destination } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface HomeProps {
@@ -8,13 +9,109 @@ interface HomeProps {
 }
 
 export function Home({ onNavigate, onSelectDestination }: HomeProps) {
-  const featuredDestinations = destinations.slice(0, 3);
-  const categories = [
-    { name: 'Praias', icon: '🏖️', count: 12 },
-    { name: 'Natureza', icon: '🌿', count: 8 },
-    { name: 'Cultura', icon: '🎭', count: 15 },
-    { name: 'Aventura', icon: '⛰️', count: 10 },
-  ];
+  const [featuredDestinations, setFeaturedDestinations] = useState<Destination[]>([]);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [featuredError, setFeaturedError] = useState('');
+  const [homeRestaurants, setHomeRestaurants] = useState<Array<{
+    id: number;
+    name: string;
+    image: string;
+    cuisine: string;
+    rating: number;
+    specialties: string[];
+  }>>([]);
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(true);
+  const [restaurantsError, setRestaurantsError] = useState('');
+
+  const apiUrl = import.meta.env.VITE_API_URL;
+
+  const defaultImage = 'https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
+  const categoryFallbackImages: Record<string, string> = {
+    Praia: 'https://images.unsplash.com/photo-1658872739589-0691c8039617?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    Natureza: 'https://images.unsplash.com/photo-1636380778575-34508e634145?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    Cultura: 'https://images.unsplash.com/photo-1515657241610-a6b33f0f6c5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    Aventura: 'https://images.unsplash.com/photo-1612222780225-04d3384823fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'Vida Selvagem': 'https://images.unsplash.com/photo-1729359035276-189519a4b072?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    Cidade: 'https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  };
+
+  const resolveExploreImage = (imageUrl: string | null | undefined, category: string) => {
+    if (imageUrl && imageUrl.trim()) return imageUrl;
+    return categoryFallbackImages[category] || defaultImage;
+  };
+
+  useEffect(() => {
+    const loadFeatured = async () => {
+      setIsLoadingFeatured(true);
+      setFeaturedError('');
+
+      try {
+        const endpoint = apiUrl ? `${apiUrl}/explore/` : '/api/explore/';
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+          throw new Error('Erro ao carregar locais em destaque');
+        }
+
+        const data = await response.json();
+        const mapped: Destination[] = (Array.isArray(data) ? data : []).map((spot: any) => ({
+          id: 100000 + Number(spot.id),
+          name: spot.name,
+          location: spot.location,
+          description: spot.description,
+          image: resolveExploreImage(spot.image_url, spot.category || ''),
+          rating: Number(spot.rating || 0),
+          category: spot.category || 'Cultura',
+          highlights: Array.isArray(spot.highlights) && spot.highlights.length > 0 ? spot.highlights : ['Local da comunidade'],
+          activities: Array.isArray(spot.activities) && spot.activities.length > 0 ? spot.activities : ['Explorar'],
+        }));
+
+        setFeaturedDestinations(mapped.slice(0, 3));
+      } catch {
+        setFeaturedError('Não foi possível carregar os destaques da comunidade.');
+        setFeaturedDestinations([]);
+      } finally {
+        setIsLoadingFeatured(false);
+      }
+    };
+
+    loadFeatured();
+  }, [apiUrl]);
+
+  useEffect(() => {
+    const loadHomeRestaurants = async () => {
+      setIsLoadingRestaurants(true);
+      setRestaurantsError('');
+
+      try {
+        const endpoint = apiUrl ? `${apiUrl}/restaurants/` : '/api/restaurants/';
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+          throw new Error('Erro ao carregar restaurantes');
+        }
+
+        const data = await response.json();
+        const mapped = (Array.isArray(data) ? data : []).map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          image: item.image || defaultImage,
+          cuisine: item.cuisine || 'Restaurante',
+          rating: Number(item.rating || 0),
+          specialties: Array.isArray(item.specialties) ? item.specialties : [],
+        }));
+
+        setHomeRestaurants(mapped.slice(0, 10));
+      } catch {
+        setRestaurantsError('Não foi possível carregar restaurantes.');
+        setHomeRestaurants([]);
+      } finally {
+        setIsLoadingRestaurants(false);
+      }
+    };
+
+    loadHomeRestaurants();
+  }, [apiUrl]);
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -56,21 +153,62 @@ export function Home({ onNavigate, onSelectDestination }: HomeProps) {
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Restaurantes em destaque */}
       <div>
-        <h3 className="font-semibold mb-3">Categorias</h3>
-        <div className="grid grid-cols-4 gap-3">
-          {categories.map((category) => (
-            <button
-              key={category.name}
-              onClick={() => onNavigate('explore')}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-white border border-gray-100 hover:border-red-200 transition-colors"
-            >
-              <span className="text-2xl">{category.icon}</span>
-              <span className="text-xs text-center font-medium">{category.name}</span>
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Restaurantes</h3>
+          <button
+            onClick={() => onNavigate('restaurants')}
+            className="text-sm text-red-600 flex items-center gap-1"
+          >
+            Ver todos
+            <ChevronRight className="size-4" />
+          </button>
         </div>
+
+        {isLoadingRestaurants && <p className="text-sm text-gray-600">A carregar restaurantes...</p>}
+        {!isLoadingRestaurants && restaurantsError && <p className="text-sm text-red-600">{restaurantsError}</p>}
+
+        {!isLoadingRestaurants && !restaurantsError && (
+          <div className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+            {homeRestaurants.map((restaurant) => (
+              <button
+                key={restaurant.id}
+                onClick={() => onNavigate('restaurants')}
+                className="flex-none w-[300px] h-[200px] bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-red-200 transition-colors flex flex-col"
+                style={{
+                  width: '300px',
+                  minWidth: '300px',
+                  maxWidth: '300px',
+                  height: '230px',
+                  minHeight: '200px',
+                  maxHeight: '230px',
+                }}
+              >
+                <div className="relative h-[130px] flex-none" style={{ height: '130px', minHeight: '130px', maxHeight: '130px' }}>
+                  <ImageWithFallback
+                    src={restaurant.image}
+                    alt={restaurant.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1">
+                    <Star className="size-3 fill-yellow-400 text-yellow-400" />
+                    <span className="text-xs font-medium">{restaurant.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+                <div className="p-3 text-left flex-1">
+                  <p className="font-semibold text-sm truncate">{restaurant.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">{restaurant.cuisine}</p>
+                  <p className="text-[11px] text-gray-600 mt-1 truncate">
+                    {restaurant.specialties.length > 0
+                      ? `Especialidades: ${restaurant.specialties.slice(0, 2).join(' • ')}`
+                      : 'Especialidades: não informadas'}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Featured Destinations */}
@@ -86,7 +224,19 @@ export function Home({ onNavigate, onSelectDestination }: HomeProps) {
           </button>
         </div>
         <div className="space-y-3">
-          {featuredDestinations.map((destination) => (
+          {isLoadingFeatured && (
+            <div className="text-sm text-gray-600">A carregar destinos em destaque...</div>
+          )}
+
+          {!isLoadingFeatured && featuredError && (
+            <div className="text-sm text-red-600">{featuredError}</div>
+          )}
+
+          {!isLoadingFeatured && !featuredError && featuredDestinations.length === 0 && (
+            <div className="text-sm text-gray-600">Ainda não há locais publicados para destaque.</div>
+          )}
+
+          {!isLoadingFeatured && !featuredError && featuredDestinations.map((destination) => (
             <button
               key={destination.id}
               onClick={() => onSelectDestination(destination)}

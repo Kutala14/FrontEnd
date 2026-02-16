@@ -22,7 +22,7 @@ export function RestaurantDashboardComplete({
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'dashboard':
+      case 'overview':
         return <DashboardOverview restaurantId={restaurantId} />;
       case 'restaurant':
         return <RestaurantManagement restaurantId={restaurantId} />;
@@ -32,7 +32,7 @@ export function RestaurantDashboardComplete({
         return (
           <div className="h-full overflow-y-auto">
             <RestaurantDashboard
-              onBack={onLogout}
+              onBack={() => setActiveSection('overview')}
               restaurantId={restaurantId}
               restaurantName={restaurantName}
             />

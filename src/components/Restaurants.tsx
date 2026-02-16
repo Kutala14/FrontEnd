@@ -27,6 +27,19 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
   const [selectedCuisine, setSelectedCuisine] = useState<string>('Todas');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isReviewsOpen, setIsReviewsOpen] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState('');
+  const [reviewsRestaurantName, setReviewsRestaurantName] = useState('');
+  const [reviews, setReviews] = useState<Array<{
+    id: number;
+    user_id: string;
+    user_name?: string | null;
+    rating: number;
+    comment: string;
+    response?: string | null;
+    created_at: string;
+  }>>([]);
   const { fetchWithAuth } = useSession();
 
   useEffect(() => {
@@ -59,16 +72,67 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
     fetchRestaurants();
   }, [fetchWithAuth]);
 
-  const cuisines = [
-    'Todas',
-    ...Array.from(new Set(restaurants.map(r => r.cuisine)))
-  ];
+  const normalizeCuisine = (value: string | null | undefined) => String(value || '').trim().toLowerCase();
+
+  const cuisines = ['Todas', ...(() => {
+    const seen = new Set<string>();
+    const values: string[] = [];
+    restaurants.forEach((restaurant) => {
+      const cuisine = String(restaurant.cuisine || '').trim();
+      if (!cuisine) return;
+      const key = normalizeCuisine(cuisine);
+      if (seen.has(key)) return;
+      seen.add(key);
+      values.push(cuisine);
+    });
+    return values;
+  })()];
 
   const filteredRestaurants = restaurants.filter(
     restaurant =>
       selectedCuisine === 'Todas' ||
-      restaurant.cuisine === selectedCuisine
+      normalizeCuisine(restaurant.cuisine) === normalizeCuisine(selectedCuisine)
   );
+
+  const loadRestaurantReviews = async (restaurant: Restaurant) => {
+    try {
+      setReviewsError('');
+      setReviews([]);
+      setReviewsRestaurantName(restaurant.name);
+      setIsReviewsOpen(true);
+      setReviewsLoading(true);
+
+      const apiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
+      const endpoint = apiUrl
+        ? `${apiUrl}/reviews/?restaurant_id=${restaurant.id}`
+        : `/api/reviews/?restaurant_id=${restaurant.id}`;
+
+      const response = await fetchWithAuth(endpoint, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar avaliações');
+      }
+
+      const data = await response.json();
+      const sorted = (Array.isArray(data) ? data : []).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setReviews(sorted);
+    } catch (err) {
+      console.error(err);
+      setReviewsError('Erro ao carregar avaliações deste restaurante');
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : 0;
 
   if (loading) {
     return (
@@ -135,7 +199,11 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
                 className="w-full h-full object-cover"
               />
 
-              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => loadRestaurantReviews(restaurant)}
+                className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1.5 rounded-full flex items-center gap-1 hover:bg-white transition-colors"
+              >
                 <Star className="size-4 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm font-medium">
                   {restaurant.rating}
@@ -143,7 +211,7 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
                 <span className="text-xs text-gray-500">
                   ({restaurant.reviews})
                 </span>
-              </div>
+              </button>
 
               <div className="absolute top-3 left-3 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium">
                 {restaurant.cuisine}
@@ -208,6 +276,77 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
           </div>
         ))}
       </div>
+
+      {isReviewsOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[85vh] overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <div>
+                <h3 className="font-semibold text-lg">Avaliações</h3>
+                <p className="text-sm text-gray-600">{reviewsRestaurantName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewsOpen(false)}
+                className="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Star className="size-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold">{averageRating.toFixed(1)}</span>
+              </div>
+              <span className="text-sm text-gray-600">{reviews.length} avaliações</span>
+            </div>
+
+            <div className="overflow-y-auto max-h-[60vh] p-5 space-y-4">
+              {reviewsLoading && (
+                <p className="text-gray-600">A carregar avaliações...</p>
+              )}
+
+              {!reviewsLoading && reviewsError && (
+                <p className="text-red-600 text-sm">{reviewsError}</p>
+              )}
+
+              {!reviewsLoading && !reviewsError && reviews.length === 0 && (
+                <p className="text-gray-600">Ainda não há avaliações para este restaurante.</p>
+              )}
+
+              {!reviewsLoading && !reviewsError && reviews.map((review) => (
+                <div key={review.id} className="border border-gray-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium text-sm text-gray-900">
+                      {review.user_name || review.user_id}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <Star
+                          key={value}
+                          className={`size-3.5 ${review.rating >= value ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(review.created_at).toLocaleDateString('pt-PT')}
+                  </p>
+                  <p className="text-sm text-gray-700 mt-2">{review.comment}</p>
+
+                  {review.response && (
+                    <div className="mt-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">Resposta do restaurante</p>
+                      <p className="text-sm text-gray-700">{review.response}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

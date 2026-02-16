@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Star, MessageSquare, ThumbsUp, Calendar } from 'lucide-react';
+import { Star, Trash2 } from 'lucide-react';
+import { useSession } from '../../context/SessionProvider';
 
 interface ReviewsManagementProps {
   restaurantId: number;
@@ -8,19 +9,27 @@ interface ReviewsManagementProps {
 interface Review {
   id: number;
   user_id: string;
+  user_name?: string;
   restaurant_id: number;
   rating: number;
   comment: string;
   created_at: string;
+  updated_at?: string;
+  visit_date?: string | null;
+  experience_type?: string | null;
+  highlights?: string[];
   response?: string;
   response_date?: string;
 }
 
 export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
+  const { fetchWithAuth } = useSession();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filter, setFilter] = useState<'all' | '5' | '4' | '3' | '2' | '1'>('all');
   const [respondingTo, setRespondingTo] = useState<number | null>(null);
   const [responseText, setResponseText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     avgRating: 0,
     totalReviews: 0,
@@ -31,12 +40,19 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
     loadReviews();
   }, [restaurantId]);
 
-  const apiUrl = (import.meta.env.VITE_API_URL as string);
+  const apiBase = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replace(/\/$/, '');
+
   const loadReviews = async () => {
     try {
-      const response = await fetch(
-        `${apiUrl}/reviews?restaurant_id=${restaurantId}`
-      );
+      setIsLoading(true);
+      setError(null);
+
+      const endpoint = `${apiBase}/reviews/?restaurant_id=${restaurantId}`;
+      const response = await fetchWithAuth(endpoint);
+
+      if (!response.ok) {
+        throw new Error('Erro ao carregar reviews');
+      }
 
       const data: Review[] = await response.json();
 
@@ -51,6 +67,9 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
       calculateStats(sorted);
     } catch (error) {
       console.error("Erro ao carregar reviews:", error);
+      setError('Não foi possível carregar as avaliações.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,21 +95,60 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
     if (!responseText.trim()) return;
 
     try {
-      await fetch(`${apiUrl}/reviews/${reviewId}`, {
-        method: "PUT",
+      const response = await fetchWithAuth(`${apiBase}/reviews/${reviewId}/response`, {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           response: responseText,
         }),
       });
 
+      if (!response.ok) {
+        throw new Error('Erro ao responder review');
+      }
+
       setResponseText('');
       setRespondingTo(null);
       loadReviews();
     } catch (error) {
       console.error("Erro ao responder review:", error);
+      setError('Não foi possível responder esta avaliação.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    try {
+      const response = await fetchWithAuth(`${apiBase}/reviews/${reviewId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao apagar review');
+      }
+
+      loadReviews();
+    } catch (error) {
+      console.error('Erro ao apagar review:', error);
+      setError('Não foi possível apagar esta avaliação.');
+    }
+  };
+
+  const handleDeleteResponse = async (reviewId: number) => {
+    try {
+      const response = await fetchWithAuth(`${apiBase}/reviews/${reviewId}/response`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao remover resposta');
+      }
+
+      loadReviews();
+    } catch (error) {
+      console.error('Erro ao remover resposta:', error);
+      setError('Não foi possível remover a resposta.');
     }
   };
 
@@ -118,9 +176,18 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
       ? reviews
       : reviews.filter(r => r.rating === parseInt(filter));
 
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-8">
+        <p className="text-gray-600">A carregar avaliações...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 lg:p-8 space-y-6">
       <h1 className="text-2xl font-bold">Avaliações</h1>
+      {error && <p className="text-sm text-red-600">{error}</p>}
 
       {/* Stats */}
       <div>
@@ -155,17 +222,24 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
       {/* Lista */}
       {filteredReviews.map(review => (
         <div key={review.id} className="border p-4 rounded-lg">
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-4">
             <div>
               <p className="font-semibold">
-                Usuário: {review.user_id}
+                Usuário: {review.user_name || review.user_id}
               </p>
               <p className="text-sm text-gray-500">
                 {new Date(review.created_at).toLocaleDateString()}
               </p>
             </div>
-            <div className="flex">
-              {renderStars(review.rating)}
+            <div className="flex items-center gap-3">
+              <div className="flex">{renderStars(review.rating)}</div>
+              <button
+                onClick={() => handleDeleteReview(review.id)}
+                className="text-red-600 hover:text-red-700"
+                title="Apagar avaliação"
+              >
+                <Trash2 className="size-4" />
+              </button>
             </div>
           </div>
 
@@ -173,9 +247,15 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
 
           {review.response && (
             <div className="bg-gray-100 p-3 rounded mt-3">
-              <p className="text-sm font-semibold">
-                Resposta do Restaurante
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold">Resposta do Restaurante</p>
+                <button
+                  onClick={() => handleDeleteResponse(review.id)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  Remover resposta
+                </button>
+              </div>
               <p>{review.response}</p>
             </div>
           )}
