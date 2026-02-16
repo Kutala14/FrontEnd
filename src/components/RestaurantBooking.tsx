@@ -1,24 +1,28 @@
 import { useState } from 'react';
-import { ArrowLeft, MapPin, Star, Clock, Phone, Calendar, Users, User, Mail, MessageSquare, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Clock, Phone, Calendar, Users, User, Mail, MessageSquare, Check, PenSquare } from 'lucide-react';
 import { Restaurant } from '../App';
+import { UserSession } from '../types/session';
+import { useSession } from '../context/SessionProvider';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface RestaurantBookingProps {
   restaurant: Restaurant;
   onBack: () => void;
+  onReview: () => void;
+  userSession: UserSession | null;
+  onRequireAuth: () => void;
 }
 
-export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps) {
+export function RestaurantBooking({ restaurant, onBack, onReview, userSession, onRequireAuth }: RestaurantBookingProps) {
   const [bookingData, setBookingData] = useState({
     date: '',
     time: '',
     guests: '2',
-    name: '',
     phone: '',
-    email: '',
     specialRequests: ''
   });
   const [isBooked, setIsBooked] = useState(false);
+  const [bookingUser, setBookingUser] = useState<{ name: string; email: string } | null>(null);
 
   const timeSlots = [
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
@@ -29,11 +33,17 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
     e.preventDefault();
     
     // Criar a reserva
+    if (!userSession) {
+      onRequireAuth();
+      return;
+    }
+
     const newBooking = {
       id: Date.now(),
       restaurantId: restaurant.id,
-      customerName: bookingData.name,
-      customerEmail: bookingData.email,
+      customerId: userSession.userId,
+      customerName: userSession.name,
+      customerEmail: userSession.email,
       customerPhone: bookingData.phone,
       date: bookingData.date,
       time: bookingData.time,
@@ -49,6 +59,7 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
     bookings.push(newBooking);
     localStorage.setItem('tukula_bookings', JSON.stringify(bookings));
     
+    setBookingUser({ name: userSession.name, email: userSession.email });
     setIsBooked(true);
   };
 
@@ -81,20 +92,62 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
             <span className="font-medium">{bookingData.guests} {bookingData.guests === '1' ? 'pessoa' : 'pessoas'}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Nome:</span>
-            <span className="font-medium">{bookingData.name}</span>
+            <span className="text-gray-600">Cliente:</span>
+            <span className="font-medium">{(bookingUser ?? userSession)?.name}</span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Email:</span>
+            <span className="font-medium">{(bookingUser ?? userSession)?.email}</span>
+          </div>
+          {bookingData.phone && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Telefone:</span>
+              <span className="font-medium">{bookingData.phone}</span>
+            </div>
+          )}
         </div>
 
-        <button
-          onClick={onBack}
-          className="w-full max-w-md bg-red-600 text-white py-3 rounded-xl font-medium hover:bg-red-700 transition-colors"
-        >
-          Voltar aos Restaurantes
-        </button>
+        <div className="w-full max-w-md flex flex-col gap-3">
+          <button
+            onClick={onBack}
+            className="w-full bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors"
+          >
+            Voltar aos Restaurantes
+          </button>
+          <button
+            onClick={onReview}
+            className="w-full bg-red-600 text-white py-3 rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <PenSquare className="size-5" />
+            Avaliar este Restaurante
+          </button>
+        </div>
       </div>
     );
   }
+
+  const renderLoginRequired = () => (
+    <div className="px-4 py-10 text-center space-y-4">
+      <h2 className="text-2xl font-bold">Entre na sua conta</h2>
+      <p className="text-gray-600">
+        É necessário iniciar sessão para reservar uma mesa ou avaliar um restaurante.
+      </p>
+      <div className="flex flex-col gap-3 max-w-sm mx-auto">
+        <button
+          onClick={onRequireAuth}
+          className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors"
+        >
+          Entrar ou criar conta
+        </button>
+        <button
+          onClick={onBack}
+          className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+        >
+          Voltar aos restaurantes
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-full bg-white">
@@ -131,8 +184,13 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
         </div>
       </div>
 
+      {!userSession && renderLoginRequired()}
+
+      {userSession && (
+        <>
+
       {/* Restaurant Details */}
-      <div className="px-4 py-4 border-b border-gray-100">
+      <div className="px-4 py-4 border-b border-gray-100 space-y-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-gray-600 text-sm">
             <MapPin className="size-4" />
@@ -146,6 +204,21 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
             <Phone className="size-4" />
             <span>{restaurant.phone}</span>
           </div>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 to-yellow-500 text-white flex flex-col gap-3">
+          <div>
+            <p className="text-sm uppercase tracking-wide font-semibold text-white/80">Partilhe a sua experiência</p>
+            <p className="text-lg font-bold leading-tight">Já conhece o {restaurant.name}? Conte-nos como foi.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onReview}
+            className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold py-3 rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            <PenSquare className="size-5" />
+            Escrever uma Avaliação
+          </button>
         </div>
       </div>
 
@@ -215,30 +288,24 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-6">
-          <h3 className="font-semibold mb-4">Informações de Contacto</h3>
-          
-          {/* Name */}
-          <div className="space-y-2 mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              <User className="size-4 inline mr-2" />
-              Nome Completo
-            </label>
-            <input
-              type="text"
-              required
-              value={bookingData.name}
-              onChange={(e) => setBookingData({ ...bookingData, name: e.target.value })}
-              placeholder="Digite o seu nome"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
+        <div className="border-t border-gray-100 pt-6 space-y-4">
+          <h3 className="font-semibold">Contacto</h3>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-gray-700">
+              <User className="size-4" />
+              <span className="font-medium">{userSession.name}</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-700">
+              <Mail className="size-4" />
+              <span className="text-sm text-gray-600">{userSession.email}</span>
+            </div>
           </div>
 
-          {/* Phone */}
-          <div className="space-y-2 mb-4">
+          <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               <Phone className="size-4 inline mr-2" />
-              Telefone
+              Telefone para contacto
             </label>
             <input
               type="tel"
@@ -246,22 +313,6 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
               value={bookingData.phone}
               onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
               placeholder="+244 9XX XXX XXX"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Email */}
-          <div className="space-y-2 mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              <Mail className="size-4 inline mr-2" />
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={bookingData.email}
-              onChange={(e) => setBookingData({ ...bookingData, email: e.target.value })}
-              placeholder="seuemail@exemplo.com"
               className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
           </div>
@@ -294,7 +345,9 @@ export function RestaurantBooking({ restaurant, onBack }: RestaurantBookingProps
         <p className="text-xs text-gray-500 text-center">
           Ao confirmar, você concorda em compartilhar suas informações com o restaurante.
         </p>
-      </form>
+        </form>
+        </>
+      )}
     </div>
   );
 }

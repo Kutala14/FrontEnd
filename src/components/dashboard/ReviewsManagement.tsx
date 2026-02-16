@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Star, MessageSquare, ThumbsUp, Calendar, User } from 'lucide-react';
+import { Star, MessageSquare, ThumbsUp, Calendar } from 'lucide-react';
 
 interface ReviewsManagementProps {
   restaurantId: number;
@@ -7,14 +7,13 @@ interface ReviewsManagementProps {
 
 interface Review {
   id: number;
-  restaurantId: number;
-  customerName: string;
-  customerEmail: string;
+  user_id: string;
+  restaurant_id: number;
   rating: number;
   comment: string;
-  date: string;
+  created_at: string;
   response?: string;
-  responseDate?: string;
+  response_date?: string;
 }
 
 export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
@@ -32,86 +31,67 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
     loadReviews();
   }, [restaurantId]);
 
-  const loadReviews = () => {
-    const reviewsData = localStorage.getItem('tukula_reviews');
-    const allReviews: Review[] = reviewsData ? JSON.parse(reviewsData) : [];
-    
-    // Filtrar reviews deste restaurante
-    const restaurantReviews = allReviews.filter(r => r.restaurantId === restaurantId);
-    
-    // Ordenar por data (mais recentes primeiro)
-    restaurantReviews.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    setReviews(restaurantReviews);
+  const apiUrl = (import.meta.env.VITE_API_URL as string);
+  const loadReviews = async () => {
+    try {
+      const response = await fetch(
+        `${apiUrl}/reviews?restaurant_id=${restaurantId}`
+      );
 
-    // Calcular estatísticas
+      const data: Review[] = await response.json();
+
+      const sorted = data.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
+      );
+
+      setReviews(sorted);
+
+      calculateStats(sorted);
+    } catch (error) {
+      console.error("Erro ao carregar reviews:", error);
+    }
+  };
+
+  const calculateStats = (restaurantReviews: Review[]) => {
     const totalReviews = restaurantReviews.length;
-    const avgRating = totalReviews > 0
-      ? restaurantReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-      : 0;
+
+    const avgRating =
+      totalReviews > 0
+        ? restaurantReviews.reduce((sum, r) => sum + r.rating, 0) /
+          totalReviews
+        : 0;
 
     const ratings = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+
     restaurantReviews.forEach(r => {
       ratings[r.rating as keyof typeof ratings]++;
     });
 
     setStats({ avgRating, totalReviews, ratings });
-
-    // Se não houver reviews, criar alguns exemplos
-    if (restaurantReviews.length === 0) {
-      const exampleReviews: Review[] = [
-        {
-          id: 1,
-          restaurantId,
-          customerName: 'Maria Silva',
-          customerEmail: 'maria@email.com',
-          rating: 5,
-          comment: 'Experiência incrível! A comida estava deliciosa e o atendimento foi excepcional. Recomendo muito!',
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 2,
-          restaurantId,
-          customerName: 'João Santos',
-          customerEmail: 'joao@email.com',
-          rating: 4,
-          comment: 'Muito bom! O ambiente é agradável e os pratos tradicionais são autênticos. Só achei um pouco demorado o serviço.',
-          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 3,
-          restaurantId,
-          customerName: 'Ana Ferreira',
-          customerEmail: 'ana@email.com',
-          rating: 5,
-          comment: 'A Muamba de Galinha estava perfeita! Melhor restaurante angolano que já visitei.',
-          date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-      
-      const allReviewsWithExamples = [...allReviews, ...exampleReviews];
-      localStorage.setItem('tukula_reviews', JSON.stringify(allReviewsWithExamples));
-      loadReviews();
-    }
   };
 
-  const handleRespond = (reviewId: number) => {
+  const handleRespond = async (reviewId: number) => {
     if (!responseText.trim()) return;
 
-    const reviewsData = localStorage.getItem('tukula_reviews');
-    const allReviews: Review[] = reviewsData ? JSON.parse(reviewsData) : [];
+    try {
+      await fetch(`${apiUrl}/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          response: responseText,
+        }),
+      });
 
-    const updatedReviews = allReviews.map(r =>
-      r.id === reviewId
-        ? { ...r, response: responseText, responseDate: new Date().toISOString() }
-        : r
-    );
-
-    localStorage.setItem('tukula_reviews', JSON.stringify(updatedReviews));
-    
-    setResponseText('');
-    setRespondingTo(null);
-    loadReviews();
+      setResponseText('');
+      setRespondingTo(null);
+      loadReviews();
+    } catch (error) {
+      console.error("Erro ao responder review:", error);
+    }
   };
 
   const renderStars = (rating: number) => {
@@ -128,187 +108,112 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
   };
 
   const getPercentage = (count: number) => {
-    return stats.totalReviews > 0 ? (count / stats.totalReviews) * 100 : 0;
+    return stats.totalReviews > 0
+      ? (count / stats.totalReviews) * 100
+      : 0;
   };
 
-  const filteredReviews = filter === 'all'
-    ? reviews
-    : reviews.filter(r => r.rating === parseInt(filter));
+  const filteredReviews =
+    filter === 'all'
+      ? reviews
+      : reviews.filter(r => r.rating === parseInt(filter));
 
   return (
     <div className="p-4 lg:p-8 space-y-6">
-      {/* Header */}
+      <h1 className="text-2xl font-bold">Avaliações</h1>
+
+      {/* Stats */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Avaliações</h1>
-        <p className="text-gray-600">Gerencie o feedback dos seus clientes</p>
+        <div className="text-4xl font-bold">
+          {stats.avgRating.toFixed(1)}
+        </div>
+        <div className="flex">
+          {renderStars(Math.round(stats.avgRating))}
+        </div>
+        <p>
+          Baseado em {stats.totalReviews} avaliações
+        </p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Average Rating */}
-          <div className="text-center lg:text-left">
-            <div className="flex flex-col lg:flex-row items-center gap-4">
-              <div>
-                <div className="text-5xl font-bold text-gray-900 mb-2">
-                  {stats.avgRating.toFixed(1)}
-                </div>
-                <div className="flex justify-center lg:justify-start mb-2">
-                  {renderStars(Math.round(stats.avgRating))}
-                </div>
-                <p className="text-sm text-gray-600">
-                  Baseado em {stats.totalReviews} {stats.totalReviews === 1 ? 'avaliação' : 'avaliações'}
-                </p>
-              </div>
+      {/* Filtros */}
+      <div className="flex gap-2">
+        <button onClick={() => setFilter('all')}>
+          Todas ({stats.totalReviews})
+        </button>
+        {[5, 4, 3, 2, 1].map(rating => (
+          <button
+            key={rating}
+            onClick={() =>
+              setFilter(rating.toString() as any)
+            }
+          >
+            {rating} ★ ({stats.ratings[rating as keyof typeof stats.ratings]})
+          </button>
+        ))}
+      </div>
+
+      {/* Lista */}
+      {filteredReviews.map(review => (
+        <div key={review.id} className="border p-4 rounded-lg">
+          <div className="flex justify-between">
+            <div>
+              <p className="font-semibold">
+                Usuário: {review.user_id}
+              </p>
+              <p className="text-sm text-gray-500">
+                {new Date(review.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="flex">
+              {renderStars(review.rating)}
             </div>
           </div>
 
-          {/* Rating Distribution */}
-          <div className="space-y-2">
-            {[5, 4, 3, 2, 1].map(rating => (
-              <div key={rating} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700 w-8">{rating} ★</span>
-                <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500"
-                    style={{ width: `${getPercentage(stats.ratings[rating as keyof typeof stats.ratings])}%` }}
-                  />
-                </div>
-                <span className="text-sm text-gray-600 w-12 text-right">
-                  {stats.ratings[rating as keyof typeof stats.ratings]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+          <p className="mt-2">{review.comment}</p>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex gap-2 overflow-x-auto">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              filter === 'all'
-                ? 'bg-gradient-to-r from-red-600 to-yellow-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Todas ({stats.totalReviews})
-          </button>
-          {[5, 4, 3, 2, 1].map(rating => (
-            <button
-              key={rating}
-              onClick={() => setFilter(rating.toString() as any)}
-              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-                filter === rating.toString()
-                  ? 'bg-gradient-to-r from-red-600 to-yellow-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {rating} ★ ({stats.ratings[rating as keyof typeof stats.ratings]})
-            </button>
-          ))}
-        </div>
-      </div>
+          {review.response && (
+            <div className="bg-gray-100 p-3 rounded mt-3">
+              <p className="text-sm font-semibold">
+                Resposta do Restaurante
+              </p>
+              <p>{review.response}</p>
+            </div>
+          )}
 
-      {/* Reviews List */}
-      {filteredReviews.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <MessageSquare className="size-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="font-semibold text-gray-900 mb-2">Nenhuma avaliação</h3>
-          <p className="text-gray-500">
-            {filter === 'all'
-              ? 'Ainda não há avaliações para o seu restaurante'
-              : `Não há avaliações com ${filter} estrelas`
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredReviews.map(review => (
-            <div key={review.id} className="bg-white rounded-xl border border-gray-200 p-6">
-              {/* Review Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-yellow-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {review.customerName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{review.customerName}</h4>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Calendar className="size-3" />
-                      <span>{new Date(review.date).toLocaleDateString('pt-PT', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex">{renderStars(review.rating)}</div>
-              </div>
-
-              {/* Review Comment */}
-              <p className="text-gray-700 mb-4">{review.comment}</p>
-
-              {/* Restaurant Response */}
-              {review.response && (
-                <div className="bg-gradient-to-r from-red-50 to-yellow-50 border border-red-100 rounded-xl p-4 mb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ThumbsUp className="size-4 text-red-600" />
-                    <span className="text-sm font-semibold text-gray-900">Resposta do Restaurante</span>
-                    {review.responseDate && (
-                      <span className="text-xs text-gray-500">
-                        • {new Date(review.responseDate).toLocaleDateString('pt-PT')}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-700">{review.response}</p>
-                </div>
-              )}
-
-              {/* Response Form */}
+          {!review.response && (
+            <div className="mt-3">
               {respondingTo === review.id ? (
-                <div className="space-y-3">
+                <>
                   <textarea
                     value={responseText}
-                    onChange={(e) => setResponseText(e.target.value)}
-                    placeholder="Escreva sua resposta..."
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                    onChange={(e) =>
+                      setResponseText(e.target.value)
+                    }
+                    className="w-full border p-2 rounded"
                   />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleRespond(review.id)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-                    >
-                      Enviar Resposta
-                    </button>
-                    <button
-                      onClick={() => {
-                        setRespondingTo(null);
-                        setResponseText('');
-                      }}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : !review.response && (
+                  <button
+                    onClick={() =>
+                      handleRespond(review.id)
+                    }
+                    className="mt-2 bg-green-600 text-white px-4 py-2 rounded"
+                  >
+                    Enviar Resposta
+                  </button>
+                </>
+              ) : (
                 <button
-                  onClick={() => setRespondingTo(review.id)}
-                  className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+                  onClick={() =>
+                    setRespondingTo(review.id)
+                  }
+                  className="text-red-600 mt-2"
                 >
-                  <MessageSquare className="size-4" />
                   Responder
                 </button>
               )}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }

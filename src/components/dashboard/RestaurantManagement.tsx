@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, Upload, MapPin, Phone, Clock, Globe, Image as ImageIcon, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useSession } from '../../context/SessionProvider';
 
 interface RestaurantManagementProps {
   restaurantId: number;
@@ -9,8 +10,8 @@ interface RestaurantData {
   id: number;
   name: string;
   description: string;
-  cuisine: string;
-  location: string;
+  cuisine_id: string;
+  location_id: string;
   phone: string;
   email: string;
   openHours: string;
@@ -26,8 +27,8 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
     id: restaurantId,
     name: '',
     description: '',
-    cuisine: '',
-    location: '',
+    cuisine_id: '',
+    location_id: '',
     phone: '',
     email: '',
     openHours: '',
@@ -41,60 +42,84 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
   const [newSpecialty, setNewSpecialty] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const { fetchWithAuth } = useSession();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     loadRestaurantData();
-  }, [restaurantId]);
+  }, [restaurantId, fetchWithAuth, apiUrl]);
 
-  const loadRestaurantData = () => {
-    const restaurantsData = localStorage.getItem('tukula_restaurants_data');
-    const restaurants = restaurantsData ? JSON.parse(restaurantsData) : [];
-    const restaurant = restaurants.find((r: any) => r.id === restaurantId);
+  const loadRestaurantData = async () => {
+    try {
+      const endpoint = apiUrl ? `${apiUrl}/restaurants/${restaurantId}` : `/api/restaurants/${restaurantId}`;
+      const response = await fetchWithAuth(endpoint);
 
-    if (restaurant) {
-      setRestaurantData(restaurant);
-    } else {
-      // Carregar dados do usuário
-      const usersData = localStorage.getItem('tukula_users');
-      const users = usersData ? JSON.parse(usersData) : [];
-      const user = users.find((u: any) => u.restaurantId === restaurantId);
-
-      if (user) {
-        setRestaurantData({
-          ...restaurantData,
-          name: user.name,
-          phone: user.phone || '',
-          location: user.location || '',
-          cuisine: user.cuisine || '',
-          email: user.email || ''
-        });
+      if (!response.ok) {
+        throw new Error("Erro ao buscar restaurante");
       }
+
+      const data = await response.json();
+
+      setRestaurantData({
+        id: data.id,
+        name: data.name || '',
+        description: data.description || '',
+        cuisine_id: data.cuisine_id ? data.cuisine_id : '',
+        location_id: data.location_id ? data.location_id : '',
+        phone: data.phone || '',
+        email: '', // email vem do User, não do Restaurant
+        openHours: data.open_hours || '',
+        priceRange: data.price_range || '$$',
+        image: data.image_url || '',
+        isActive: true, // ainda não existe no backend
+        website: '',
+        specialties: [] // ainda não está modelado no backend
+      });
+
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("Erro ao carregar restaurante");
     }
   };
 
-  const handleSave = () => {
+
+  const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage('');
 
-    // Salvar dados
-    const restaurantsData = localStorage.getItem('tukula_restaurants_data');
-    const restaurants = restaurantsData ? JSON.parse(restaurantsData) : [];
-    
-    const existingIndex = restaurants.findIndex((r: any) => r.id === restaurantId);
-    
-    if (existingIndex >= 0) {
-      restaurants[existingIndex] = restaurantData;
-    } else {
-      restaurants.push(restaurantData);
+    try {
+      const endpoint = apiUrl ? `${apiUrl}/restaurants/${restaurantId}` : `/api/restaurants/${restaurantId}`;
+
+      const response = await fetchWithAuth(endpoint, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: restaurantData.name,
+          description: restaurantData.description,
+          phone: restaurantData.phone,
+          open_hours: restaurantData.openHours,
+          price_range: restaurantData.priceRange,
+          image_url: restaurantData.image,
+          cuisine_id: restaurantData.cuisine_id || null,
+          location_id: restaurantData.location_id || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar restaurante");
+      }
+
+      setSaveMessage("Dados guardados com sucesso 🔥");
+
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("Erro ao salvar alterações");
     }
 
-    localStorage.setItem('tukula_restaurants_data', JSON.stringify(restaurants));
-
-    setTimeout(() => {
-      setIsSaving(false);
-      setSaveMessage('Dados salvos com sucesso!');
-      setTimeout(() => setSaveMessage(''), 3000);
-    }, 1000);
+    setIsSaving(false);
+    setTimeout(() => setSaveMessage(''), 3000);
   };
 
   const addSpecialty = () => {
@@ -207,8 +232,8 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
               Tipo de Cozinha *
             </label>
             <select
-              value={restaurantData.cuisine}
-              onChange={(e) => setRestaurantData({ ...restaurantData, cuisine: e.target.value })}
+              value={restaurantData.cuisine_id}
+              onChange={(e) => setRestaurantData({ ...restaurantData, cuisine_id: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               <option value="">Selecione...</option>
@@ -257,8 +282,8 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
               <input
                 type="text"
-                value={restaurantData.location}
-                onChange={(e) => setRestaurantData({ ...restaurantData, location: e.target.value })}
+                value={restaurantData.location_id}
+                onChange={(e) => setRestaurantData({ ...restaurantData, location_id: e.target.value })}
                 className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Luanda, Talatona"
               />

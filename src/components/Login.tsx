@@ -1,73 +1,50 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { useSession } from '../context/SessionProvider';
+import { ApiError } from '../lib/auth-client';
+import { UserRole } from '../types/session';
 
 interface LoginProps {
   onBack: () => void;
-  onLogin: (
-    user: { 
-      userId: number;
-      email: string;
-      name: string;
-      type: string;
-      restaurantId?: number;
-      accessToken: string }) => void;
   onSwitchToRegister: () => void;
+  onSuccess?: () => void;
 }
 
-export function Login({ onBack, onLogin, onSwitchToRegister }: LoginProps) {
+export function Login({ onBack, onSwitchToRegister, onSuccess }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<'user' | 'restaurant'>('user');
+  const [userType, setUserType] = useState<UserRole>('user');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  if (!email || !password) {
-    setError('Por favor, preencha todos os campos');
-    return;
-  }
-
-  const apiUrl = (import.meta.env.VITE_API_URL as string);
-  
-  try {
-    const response = await fetch(`${apiUrl}/auth/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        type: userType
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.message || 'Credenciais envalidas');
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos');
       return;
     }
 
-    localStorage.setItem('tukula_token', data.access_token);
-    localStorage.setItem(
-      'tukula_session',
-      JSON.stringify({
-        email: data.user.email,
-        name: data.user.name,
-        type: data.user.type,
-        restaurantId: data.user.restaurant_id,
-        userId: data.user.user_id
-      })
-    );
-
-    onLogin(data.user);
-
-    } catch (error) {
-      setError('Erro de conexão com o servidor');
+    setIsSubmitting(true);
+    try {
+      await login({ email, password, type: userType });
+      onSuccess?.();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 0) {
+          setError('Erro de conexão com o servidor');
+          return;
+        }
+        const payload = err.payload as { message?: string; error?: string } | null;
+        setError(payload?.error || payload?.message || err.message || 'Credenciais inválidas');
+      } else {
+        setError('Erro de conexão com o servidor');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -171,9 +148,10 @@ export function Login({ onBack, onLogin, onSwitchToRegister }: LoginProps) {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-red-600 to-yellow-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-shadow"
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-red-600 to-yellow-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-shadow disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Entrar
+            {isSubmitting ? 'A entrar...' : 'Entrar'}
           </button>
         </form>
 

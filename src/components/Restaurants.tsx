@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Star, Clock, Phone, ChevronRight } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useSession } from '../context/SessionProvider';
 
 interface Restaurant {
   id: number;
@@ -26,18 +27,17 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
   const [selectedCuisine, setSelectedCuisine] = useState<string>('Todas');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { fetchWithAuth } = useSession();
 
-  // 🔥 Buscar restaurantes da API
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL;
-        const token = localStorage.getItem('tukula_token');
+        const endpoint = apiUrl ? `${apiUrl}/restaurants/` : '/api/restaurants';
 
-        const response = await fetch(`${apiUrl}/restaurants/`, {
+        const response = await fetchWithAuth(endpoint, {
           headers: {
             'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
           }
         });
 
@@ -57,9 +57,8 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
     };
 
     fetchRestaurants();
-  }, []);
+  }, [fetchWithAuth]);
 
-  // 🔥 Gerar categorias dinamicamente
   const cuisines = [
     'Todas',
     ...Array.from(new Set(restaurants.map(r => r.cuisine)))
@@ -71,7 +70,6 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
       restaurant.cuisine === selectedCuisine
   );
 
-  // 🔄 Loading state
   if (loading) {
     return (
       <div className="p-6 text-center text-gray-600">
@@ -80,7 +78,6 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
     );
   }
 
-  // ❌ Error state
   if (error) {
     return (
       <div className="p-6 text-center text-red-600">

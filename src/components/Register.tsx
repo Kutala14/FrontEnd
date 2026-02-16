@@ -9,28 +9,28 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Building2, Phone, MapPin, ArrowLeft } from 'lucide-react';
+
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+function getEndpoint(path: string) {
+  if (!API_BASE) return path;
+  return `${API_BASE}${path}`;
+}
 
 interface RegisterProps {
   onBack: () => void;
-  onRegister: (
-    user: { 
-      userId: number;
-      email: string;
-      name: string;
-      type: string;
-      restaurantId?: number;
-      accessToken: string }) => void;
   onSwitchToLogin: () => void;
+  onSuccess?: () => void;
 }
 
 interface Cousine {
-  id_cousine: number;
+  id: number;
   name: string;
 }
 
-export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps) {
+export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) {
   const [userType, setUserType] = useState<'user' | 'restaurant'>('user');
   const [formData, setFormData] = useState({
     name: '',
@@ -73,17 +73,20 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
     }
 
     // Criar novo usuário
-    const apiUrl = (import.meta.env.VITE_API_URL as string);
     try {
-      const response = await fetch(`${apiUrl}/auth/register`, {
+      const response = await fetch(getEndpoint('/auth/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...formData,
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phone: userType === 'restaurant' ? formData.phone : undefined,
+          location: userType === 'restaurant' ? formData.location : undefined,
+          cuisine_id: userType === 'restaurant' && formData.cuisine ? Number(formData.cuisine) : undefined,
           type: userType,
-          restaurantId: userType === 'restaurant' ? `rest_${Date.now()}` : null
         })
       });
 
@@ -92,16 +95,16 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
         setError(data.error || 'Erro ao criar conta');
         return;
       }
-      setError('Conta criada com sucesso! Redirecionando...');
+      setSuccess(true);
+      onSuccess?.();
     } catch (error) {
       setError('Erro de conexão com o servidor');
     }
   };
 
   const handleGetcousines = async () => {
-    const apiUrl = (import.meta.env.VITE_API_URL as string);
     try {
-      const response = await fetch(`${apiUrl}/restaurants/cuisines`, {
+      const response = await fetch(getEndpoint('/restaurants/cuisines'), {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -119,9 +122,9 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
   };
   
   // Buscar tipos de cozinha ao montar o componente
-  useState(() => {
+  useEffect(() => {
     handleGetcousines();
-  });
+  }, []);
   
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
@@ -264,7 +267,7 @@ export function Register({ onBack, onRegister, onSwitchToLogin }: RegisterProps)
                   >
                     <option value="">Selecione...</option>
                     {cousine.map((cuisine) => (
-                      <option key={cuisine.id_cousine} value={cuisine.id_cousine}>
+                      <option key={cuisine.id} value={cuisine.id}>
                         {cuisine.name}
                       </option>
                     ))}

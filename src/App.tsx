@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Home } from './components/Home';
 import { Explore } from './components/Explore';
 import { DestinationDetail } from './components/DestinationDetail';
 import { Experiences } from './components/Experiences';
 import { Restaurants } from './components/Restaurants';
 import { RestaurantBooking } from './components/RestaurantBooking';
+import { RestaurantReview } from './components/RestaurantReview';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { RestaurantDashboardComplete } from './components/RestaurantDashboardComplete';
 import { Navigation } from './components/Navigation';
 import { User, LogOut } from 'lucide-react';
+import { useSession } from './context/SessionProvider';
 
-export type Page = 'home' | 'explore' | 'destination' | 'experiences' | 'restaurants' | 'restaurant-booking' | 'login' | 'register' | 'dashboard';
+export type Page = 'home' | 'explore' | 'destination' | 'experiences' | 'restaurants' | 'restaurant-booking' | 'restaurant-review' | 'login' | 'register' | 'dashboard';
 
 export interface Destination {
   id: number;
@@ -40,14 +42,6 @@ export interface Restaurant {
   specialties: string[];
 }
 
-interface UserSession {
-  userId: number;
-  email: string;
-  name: string;
-  type: string;
-  restaurantId?: number;
-  accessToken: string;
-}
 
 export const destinations: Destination[] = [
   {
@@ -122,15 +116,15 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [userSession, setUserSession] = useState<UserSession | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const { user: userSession, status: sessionStatus, logout: sessionLogout } = useSession();
 
   const handleNavigate = (page: Page) => {
     setCurrentPage(page);
     if (page !== 'destination') {
       setSelectedDestination(null);
     }
-    if (page !== 'restaurant-booking') {
+    if (page !== 'restaurant-booking' && page !== 'restaurant-review') {
       setSelectedRestaurant(null);
     }
   };
@@ -145,20 +139,8 @@ export default function App() {
     setCurrentPage('restaurant-booking');
   };
 
-  const handleLogin = (user: UserSession) => {
-    setUserSession(user);
-    setCurrentPage('home');
-    setShowUserMenu(false);
-  };
-
-  const handleRegister = (user: UserSession) => {
-    setUserSession(user);
-    setCurrentPage('home');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('tukula_session');
-    setUserSession(null);
+  const handleLogout = async () => {
+    await sessionLogout();
     setCurrentPage('home');
     setShowUserMenu(false);
   };
@@ -180,6 +162,14 @@ export default function App() {
           restaurantName={userSession.name}
           onLogout={handleLogout}
         />
+      </div>
+    );
+  }
+
+  if (sessionStatus === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-10 h-10 border-4 border-gray-200 border-t-red-500 rounded-full animate-spin" aria-label="A carregar sessão" />
       </div>
     );
   }
@@ -258,20 +248,38 @@ export default function App() {
         {currentPage === 'experiences' && <Experiences />}
         {currentPage === 'restaurants' && <Restaurants onSelectRestaurant={handleSelectRestaurant} />}
         {currentPage === 'restaurant-booking' && selectedRestaurant && (
-          <RestaurantBooking restaurant={selectedRestaurant} onBack={() => handleNavigate('restaurants')} />
+          <RestaurantBooking 
+            restaurant={selectedRestaurant} 
+            onBack={() => handleNavigate('restaurants')} 
+            onReview={() => setCurrentPage('restaurant-review')}
+            userSession={userSession}
+            onRequireAuth={() => setCurrentPage('login')}
+          />
+        )}
+        {currentPage === 'restaurant-review' && selectedRestaurant && (
+          <RestaurantReview 
+            restaurant={selectedRestaurant} 
+            onBack={() => handleNavigate('restaurant-booking')} 
+            onGoHome={() => handleNavigate('home')}
+            userSession={userSession}
+            onRequireAuth={() => setCurrentPage('login')}
+          />
         )}
         {currentPage === 'login' && (
           <Login 
             onBack={() => handleNavigate('home')} 
-            onLogin={handleLogin}
             onSwitchToRegister={() => setCurrentPage('register')}
+            onSuccess={() => {
+              setCurrentPage('home');
+              setShowUserMenu(false);
+            }}
           />
         )}
         {currentPage === 'register' && (
           <Register 
             onBack={() => handleNavigate('home')} 
-            onRegister={handleRegister}
             onSwitchToLogin={() => setCurrentPage('login')}
+            onSuccess={() => setCurrentPage('login')}
           />
         )}
       </main>
