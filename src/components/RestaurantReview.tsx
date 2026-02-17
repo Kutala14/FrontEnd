@@ -343,15 +343,18 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
                 ))}
               </div>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                <span className="flex items-center gap-2"><MessageSquare className="size-4" /> Comentários</span>
+              <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                <span className="inline-flex items-center gap-2 shrink-0 whitespace-nowrap">
+                  <MessageSquare className="size-4" />
+                  Comentários
+                </span>
                 <textarea
                   required
                   value={reviewData.comment}
                   onChange={(event) => setReviewData((prev) => ({ ...prev, comment: event.target.value }))}
                   placeholder="Fale sobre o prato favorito, atendimento, ambiente..."
                   rows={5}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                  className="flex-1 min-w-0 px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                 />
               </label>
             </section>

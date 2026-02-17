@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, MapPin, Star, Clock, Phone, Calendar, Users, User, Mail, MessageSquare, Check, PenSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Clock, Phone, Calendar, Users, User, Mail, MessageSquare, Check, PenSquare, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
 import { Restaurant } from '../App';
 import { UserSession } from '../types/session';
 import { useSession } from '../context/SessionProvider';
@@ -27,6 +27,17 @@ interface MenuItem {
   is_available: boolean;
 }
 
+interface RestaurantService {
+  id: number;
+  type: 'hosting' | 'events' | 'catering';
+  name: string;
+  description: string | null;
+  price: number;
+  price_unit: string;
+  is_available: boolean;
+  features: string[];
+}
+
 export function RestaurantBooking({ restaurant, onBack, onReview, userSession, onRequireAuth }: RestaurantBookingProps) {
   const { fetchWithAuth } = useSession();
   const [bookingData, setBookingData] = useState({
@@ -45,8 +56,12 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState('');
-  const [isMenuOpen, setIsMenuOpen] = useState(true);
-  const [isReservationOpen, setIsReservationOpen] = useState(true);
+  const [services, setServices] = useState<RestaurantService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [servicesError, setServicesError] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isServicesOpen, setIsServicesOpen] = useState(false);
+  const [isReservationOpen, setIsReservationOpen] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -75,7 +90,31 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
       }
     };
 
+    const loadServices = async () => {
+      setServicesLoading(true);
+      setServicesError('');
+
+      try {
+        const endpoint = apiUrl
+          ? `${apiUrl}/restaurants/${restaurant.id}/services`
+          : `/api/restaurants/${restaurant.id}/services`;
+
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error('Erro ao carregar serviços');
+        }
+
+        const data = await response.json();
+        setServices(Array.isArray(data.items) ? data.items : []);
+      } catch {
+        setServicesError('Não foi possível carregar os serviços deste restaurante.');
+      } finally {
+        setServicesLoading(false);
+      }
+    };
+
     loadMenu();
+    loadServices();
   }, [apiUrl, restaurant.id]);
 
   const timeSlots = [
@@ -269,7 +308,6 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
             onClick={onReview}
             className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold py-3 rounded-xl hover:bg-gray-100 transition-colors"
           >
-            <PenSquare className="size-5" />
             Escrever uma Avaliação
           </button>
         </div>
@@ -321,6 +359,60 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
                 </div>
               );
             })}
+          </>
+        )}
+      </div>
+
+      <div className="px-4 py-6 border-b border-gray-100 space-y-4">
+        <button
+          type="button"
+          onClick={() => setIsServicesOpen(!isServicesOpen)}
+          className="w-full flex items-center justify-between"
+        >
+          <h2 className="text-xl font-bold text-left">Serviços</h2>
+          {isServicesOpen ? <ChevronUp className="size-5 text-gray-600" /> : <ChevronDown className="size-5 text-gray-600" />}
+        </button>
+
+        {isServicesOpen && (
+          <>
+            {servicesLoading && <p className="text-sm text-gray-600">A carregar serviços...</p>}
+
+            {!servicesLoading && servicesError && <p className="text-sm text-red-600">{servicesError}</p>}
+
+            {!servicesLoading && !servicesError && services.length === 0 && (
+              <p className="text-sm text-gray-600">Este restaurante ainda não publicou serviços adicionais.</p>
+            )}
+
+            {!servicesLoading && !servicesError && services.length > 0 && (
+              <div className="space-y-3">
+                {services.map((service) => (
+                  <div key={service.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="size-4 text-gray-500" />
+                          <p className="font-semibold text-gray-900">{service.name}</p>
+                        </div>
+                        {service.description && <p className="text-sm text-gray-600 mt-1">{service.description}</p>}
+                        {service.features.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {service.features.map((feature, index) => (
+                              <span key={`${service.id}-${index}`} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-lg">
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-semibold text-red-600">${Number(service.price).toFixed(2)}</p>
+                        <p className="text-xs text-gray-500">/{service.price_unit}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

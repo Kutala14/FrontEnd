@@ -6,6 +6,7 @@ import { MenuManagement } from './dashboard/MenuManagement';
 import { RestaurantDashboard } from './RestaurantDashboard';
 import { ServicesManagement } from './dashboard/ServicesManagement';
 import { ReviewsManagement } from './dashboard/ReviewsManagement';
+import { Experiences } from './Experiences';
 
 interface RestaurantDashboardCompleteProps {
   restaurantId: number;
@@ -40,6 +41,8 @@ export function RestaurantDashboardComplete({
         );
       case 'services':
         return <ServicesManagement restaurantId={restaurantId} />;
+      case 'experiences':
+        return <Experiences />;
       case 'reviews':
         return <ReviewsManagement restaurantId={restaurantId} />;
       default:

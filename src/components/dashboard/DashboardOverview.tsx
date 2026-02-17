@@ -26,11 +26,6 @@ interface Stats {
   confirmedBookings: number;
 }
 
-interface PopularDish {
-  name: string;
-  orders: number;
-}
-
 export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
   const [stats, setStats] = useState<Stats>({
     todayBookings: 0,
@@ -43,7 +38,6 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
     confirmedBookings: 0
   });
 
-  const [popularDishes, setPopularDishes] = useState<PopularDish[]>([]);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const { fetchWithAuth } = useSession();
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -109,13 +103,6 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
       .slice(0, 5);
     setRecentBookings(recent);
 
-    // Pratos mais populares (simulado)
-    setPopularDishes([
-      { name: 'Muamba de Galinha', orders: 45 },
-      { name: 'Calulu de Peixe', orders: 38 },
-      { name: 'Funge com Molho', orders: 32 },
-      { name: 'Mufete', orders: 28 },
-    ]);
   };
 
   return (
@@ -185,9 +172,8 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
         </div>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Booking Status */}
+      {/* Booking Status */}
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="font-bold text-lg mb-4">Estado das Reservas</h3>
           <div className="space-y-4">
@@ -223,24 +209,6 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
               </div>
               <span className="text-2xl font-bold text-blue-600">{stats.monthBookings}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Popular Dishes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="font-bold text-lg mb-4">Pratos Mais Pedidos</h3>
-          <div className="space-y-3">
-            {popularDishes.map((dish, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-yellow-500 rounded-lg flex items-center justify-center text-white font-bold">
-                    {index + 1}
-                  </div>
-                  <span className="font-medium text-gray-900">{dish.name}</span>
-                </div>
-                <span className="text-sm font-semibold text-gray-600">{dish.orders} pedidos</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>

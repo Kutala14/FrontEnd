@@ -9,6 +9,14 @@ interface SessionContextValue {
   user: UserSession | null;
   accessToken: string | null;
   login: (payload: { email: string; password: string; type: UserRole }) => Promise<void>;
+  loginWithGoogle: (payload: {
+    credential: string;
+    type: UserRole;
+    name?: string;
+    phone?: string;
+    location?: string;
+    cuisine_id?: number;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
   fetchWithAuth: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -93,6 +101,18 @@ function useSessionContextValue(): SessionContextValue {
     applySession({ user: result.user, accessToken: result.accessToken, expiresIn: result.expiresIn });
   }, [applySession]);
 
+  const loginWithGoogle = useCallback(async (payload: {
+    credential: string;
+    type: UserRole;
+    name?: string;
+    phone?: string;
+    location?: string;
+    cuisine_id?: number;
+  }) => {
+    const result = await authClient.googleAuth(payload);
+    applySession({ user: result.user, accessToken: result.accessToken, expiresIn: result.expiresIn });
+  }, [applySession]);
+
   const logout = useCallback(async () => {
     try {
       await authClient.logout();
@@ -128,7 +148,7 @@ function useSessionContextValue(): SessionContextValue {
     };
   }, [applySession, clearSession]);
 
-  return { status, user, accessToken, login, logout, refreshAccessToken, fetchWithAuth };
+  return { status, user, accessToken, login, loginWithGoogle, logout, refreshAccessToken, fetchWithAuth };
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {

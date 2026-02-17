@@ -109,6 +109,20 @@ export const authClient = {
     });
     return mapAuthResponse(result);
   },
+  googleAuth: async (payload: {
+    credential: string;
+    type: UserRole;
+    name?: string;
+    phone?: string;
+    location?: string;
+    cuisine_id?: number;
+  }) => {
+    const result = await request<BackendAuthResponse>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return mapAuthResponse(result);
+  },
   refresh: async () => ({ accessToken: '' }),
   logout: async () => undefined,
   session: async (token?: string) => {

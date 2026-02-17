@@ -9,8 +9,12 @@ import {
   LogOut,
   X,
   ChevronRight,
-  Briefcase
+  Briefcase,
+  Compass,
+  Moon,
+  Sun
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeProvider';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -25,6 +29,7 @@ const menuItems = [
   { id: 'restaurant', label: 'Meu Restaurante', icon: Store },
   { id: 'menu', label: 'Menu', icon: MenuIcon },
   { id: 'bookings', label: 'Reservas', icon: Calendar },
+  { id: 'experiences', label: 'Experiências', icon: Compass },
   { id: 'services', label: 'Serviços', icon: Briefcase },
   { id: 'reviews', label: 'Avaliações', icon: Star },
 ];
@@ -37,6 +42,7 @@ export function DashboardLayout({
   onLogout 
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -92,6 +98,14 @@ export function DashboardLayout({
 
         {/* Logout */}
         <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors mb-2"
+          >
+            {theme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            <span className="font-medium">{theme === 'dark' ? 'Tema claro' : 'Tema escuro'}</span>
+          </button>
+
           <button
             onClick={onLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
@@ -191,7 +205,13 @@ export function DashboardLayout({
             <MenuIcon className="size-6" />
           </button>
           <h1 className="font-bold text-gray-900">Dashboard</h1>
-          <div className="w-10" />
+          <button
+            onClick={toggleTheme}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+            aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+          >
+            {theme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
+          </button>
         </header>
 
         {/* Content */}

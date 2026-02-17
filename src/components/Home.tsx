@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Star, ChevronRight, Search } from 'lucide-react';
-import { Page, Destination } from '../App';
+import { Destination } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface HomeProps {
-  onNavigate: (page: Page) => void;
+  onNavigate: (path: string) => void;
   onSelectDestination: (destination: Destination) => void;
+  onOpenSearch: (query: string) => void;
 }
 
-export function Home({ onNavigate, onSelectDestination }: HomeProps) {
+export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProps) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [featuredDestinations, setFeaturedDestinations] = useState<Destination[]>([]);
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
   const [featuredError, setFeaturedError] = useState('');
@@ -121,6 +123,18 @@ export function Home({ onNavigate, onSelectDestination }: HomeProps) {
         <input
           type="text"
           placeholder="Pesquisar destinos, restaurantes..."
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              onOpenSearch(searchQuery.trim());
+            }
+          }}
+          onFocus={() => {
+            if (!searchQuery.trim()) {
+              onOpenSearch('');
+            }
+          }}
           className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
         />
       </div>
@@ -158,7 +172,7 @@ export function Home({ onNavigate, onSelectDestination }: HomeProps) {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Restaurantes</h3>
           <button
-            onClick={() => onNavigate('restaurants')}
+            onClick={() => onNavigate('/restaurants')}
             className="text-sm text-red-600 flex items-center gap-1"
           >
             Ver todos
@@ -174,7 +188,7 @@ export function Home({ onNavigate, onSelectDestination }: HomeProps) {
             {homeRestaurants.map((restaurant) => (
               <button
                 key={restaurant.id}
-                onClick={() => onNavigate('restaurants')}
+                onClick={() => onNavigate('/restaurants')}
                 className="flex-none w-[300px] h-[200px] bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-red-200 transition-colors flex flex-col"
                 style={{
                   width: '300px',
@@ -216,7 +230,7 @@ export function Home({ onNavigate, onSelectDestination }: HomeProps) {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Destinos Populares</h3>
           <button
-            onClick={() => onNavigate('explore')}
+            onClick={() => onNavigate('/explore')}
             className="text-sm text-red-600 flex items-center gap-1"
           >
             Ver todos

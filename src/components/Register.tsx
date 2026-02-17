@@ -11,6 +11,9 @@ interface ImportMeta {
 
 import { useEffect, useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, Building2, Phone, MapPin, ArrowLeft } from 'lucide-react';
+import { useSession } from '../context/SessionProvider';
+import { ApiError } from '../lib/auth-client';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
@@ -31,6 +34,7 @@ interface Cousine {
 }
 
 export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) {
+  const { loginWithGoogle } = useSession();
   const [userType, setUserType] = useState<'user' | 'restaurant'>('user');
   const [formData, setFormData] = useState({
     name: '',
@@ -45,30 +49,36 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [cousine, setCousines] = useState<Cousine[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     // Validações
     if (!formData.name || !formData.email || !formData.password) {
       setError('Por favor, preencha todos os campos obrigatórios');
+      setIsSubmitting(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres');
+      setIsSubmitting(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem');
+      setIsSubmitting(false);
       return;
     }
 
     if (userType === 'restaurant' && (!formData.phone || !formData.location)) {
       setError('Restaurantes devem preencher todos os campos');
+      setIsSubmitting(false);
       return;
     }
 
@@ -99,6 +109,41 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
       onSuccess?.();
     } catch (error) {
       setError('Erro de conexão com o servidor');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleRegister = async (credential: string) => {
+    setError('');
+
+    if (userType === 'restaurant' && (!formData.phone || !formData.location)) {
+      setError('Para registar restaurante com Google, preencha telefone e localização.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await loginWithGoogle({
+        credential,
+        type: userType,
+        name: formData.name || undefined,
+        phone: userType === 'restaurant' ? formData.phone : undefined,
+        location: userType === 'restaurant' ? formData.location : undefined,
+        cuisine_id: userType === 'restaurant' && formData.cuisine ? Number(formData.cuisine) : undefined,
+      });
+
+      setSuccess(true);
+      onSuccess?.();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const payload = err.payload as { message?: string; error?: string } | null;
+        setError(payload?.error || payload?.message || err.message || 'Falha no registo com Google');
+      } else {
+        setError('Falha no registo com Google');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -335,10 +380,26 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
             {/* Submit Button */}
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full bg-gradient-to-r from-red-600 to-yellow-500 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-shadow"
             >
-              Criar Conta
+              {isSubmitting ? 'A criar...' : 'Criar Conta'}
             </button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-gray-50 px-2 text-gray-500">ou</span>
+              </div>
+            </div>
+
+            <GoogleAuthButton
+              text="signup_with"
+              onCredential={handleGoogleRegister}
+              disabled={isSubmitting}
+            />
           </form>
         )}
 

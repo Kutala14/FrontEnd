@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Hotel, PartyPopper, UtensilsCrossed, ToggleLeft, ToggleRight, DollarSign } from 'lucide-react';
+import { useSession } from '../../context/SessionProvider';
 
 interface ServicesManagementProps {
   restaurantId: number;
@@ -23,10 +24,13 @@ const serviceTypes = [
 ];
 
 export function ServicesManagement({ restaurantId }: ServicesManagementProps) {
+  const { fetchWithAuth } = useSession();
   const [services, setServices] = useState<Service[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [newFeature, setNewFeature] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const [serviceForm, setServiceForm] = useState({
     type: 'hosting' as 'hosting' | 'events' | 'catering',
@@ -38,46 +42,95 @@ export function ServicesManagement({ restaurantId }: ServicesManagementProps) {
     features: [] as string[]
   });
 
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const getEndpoint = (path: string) => (apiUrl ? `${apiUrl}${path}` : `/api${path}`);
+
+  const mapApiService = (service: any): Service => ({
+    id: Number(service.id),
+    type: service.type,
+    name: service.name,
+    description: service.description || '',
+    price: Number(service.price || 0),
+    priceUnit: service.price_unit || 'unidade',
+    isAvailable: Boolean(service.is_available),
+    features: Array.isArray(service.features) ? service.features : [],
+  });
+
   useEffect(() => {
     loadServices();
   }, [restaurantId]);
 
-  const loadServices = () => {
-    const servicesData = localStorage.getItem(`tukula_services_${restaurantId}`);
-    const loadedServices = servicesData ? JSON.parse(servicesData) : [];
-    setServices(loadedServices);
+  const loadServices = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await fetchWithAuth(getEndpoint(`/restaurants/${restaurantId}/services`));
+      if (!response.ok) {
+        throw new Error('Erro ao carregar serviços');
+      }
+
+      const data = await response.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+      setServices(items.map(mapApiService));
+    } catch {
+      setError('Não foi possível carregar os serviços.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const saveServices = (servs: Service[]) => {
-    localStorage.setItem(`tukula_services_${restaurantId}`, JSON.stringify(servs));
-    setServices(servs);
-  };
-
-  const handleSaveService = () => {
+  const handleSaveService = async () => {
     if (!serviceForm.name.trim() || !serviceForm.price) return;
 
-    if (editingService) {
-      const updatedServices = services.map(service =>
-        service.id === editingService.id
-          ? { ...editingService, ...serviceForm, price: parseFloat(serviceForm.price) }
-          : service
-      );
-      saveServices(updatedServices);
-    } else {
-      const newService: Service = {
-        id: Date.now(),
-        type: serviceForm.type,
-        name: serviceForm.name,
-        description: serviceForm.description,
-        price: parseFloat(serviceForm.price),
-        priceUnit: serviceForm.priceUnit,
-        isAvailable: serviceForm.isAvailable,
-        features: serviceForm.features
-      };
-      saveServices([...services, newService]);
-    }
+    setError('');
 
-    resetForm();
+    const payload = {
+      type: serviceForm.type,
+      name: serviceForm.name.trim(),
+      description: serviceForm.description.trim(),
+      price: parseFloat(serviceForm.price),
+      price_unit: serviceForm.priceUnit,
+      is_available: serviceForm.isAvailable,
+      features: serviceForm.features,
+    };
+
+    try {
+      if (editingService) {
+        const response = await fetchWithAuth(
+          getEndpoint(`/restaurants/${restaurantId}/services/${editingService.id}`),
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error('Erro ao atualizar serviço');
+        }
+
+        const updated = mapApiService(await response.json());
+        setServices((prev) => prev.map((service) => (service.id === updated.id ? updated : service)));
+      } else {
+        const response = await fetchWithAuth(getEndpoint(`/restaurants/${restaurantId}/services`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao criar serviço');
+        }
+
+        const created = mapApiService(await response.json());
+        setServices((prev) => [created, ...prev]);
+      }
+
+      resetForm();
+    } catch {
+      setError('Não foi possível guardar o serviço.');
+    }
   };
 
   const resetForm = () => {
@@ -109,16 +162,46 @@ export function ServicesManagement({ restaurantId }: ServicesManagementProps) {
     setShowForm(true);
   };
 
-  const handleDeleteService = (id: number) => {
+  const handleDeleteService = async (id: number) => {
     if (!confirm('Tem certeza que deseja remover este serviço?')) return;
-    saveServices(services.filter(s => s.id !== id));
+
+    setError('');
+    try {
+      const response = await fetchWithAuth(getEndpoint(`/restaurants/${restaurantId}/services/${id}`), {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao remover serviço');
+      }
+
+      setServices((prev) => prev.filter((service) => service.id !== id));
+    } catch {
+      setError('Não foi possível remover o serviço.');
+    }
   };
 
-  const toggleServiceAvailability = (id: number) => {
-    const updatedServices = services.map(service =>
-      service.id === id ? { ...service, isAvailable: !service.isAvailable } : service
-    );
-    saveServices(updatedServices);
+  const toggleServiceAvailability = async (id: number) => {
+    const current = services.find((service) => service.id === id);
+    if (!current) return;
+
+    setError('');
+    try {
+      const response = await fetchWithAuth(getEndpoint(`/restaurants/${restaurantId}/services/${id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_available: !current.isAvailable }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao alterar disponibilidade');
+      }
+
+      const updated = mapApiService(await response.json());
+      setServices((prev) => prev.map((service) => (service.id === updated.id ? updated : service)));
+    } catch {
+      setError('Não foi possível atualizar a disponibilidade.');
+    }
   };
 
   const addFeature = () => {
@@ -180,6 +263,10 @@ export function ServicesManagement({ restaurantId }: ServicesManagementProps) {
           Novo Serviço
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">{error}</div>
+      )}
 
       {/* Service Form */}
       {showForm && (
@@ -339,7 +426,9 @@ export function ServicesManagement({ restaurantId }: ServicesManagementProps) {
       )}
 
       {/* Services List */}
-      {services.length === 0 && !showForm ? (
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500">A carregar serviços...</div>
+      ) : services.length === 0 && !showForm ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <UtensilsCrossed className="size-16 text-gray-300 mx-auto mb-4" />
           <h3 className="font-semibold text-gray-900 mb-2">Nenhum serviço adicional</h3>

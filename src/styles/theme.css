@@ -1,0 +1,87 @@
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+.dark body {
+  background-color: #121212;
+  color: #f3f4f6;
+}
+
+.dark .bg-gray-50 {
+  background-color: #181818 !important;
+}
+
+.dark .bg-white {
+  background-color: #202020 !important;
+}
+
+.dark .bg-white\/90 {
+  color: #111111 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #2a2a2a !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #3a3a3a !important;
+}
+
+.dark .text-gray-900 {
+  color: #f3f4f6 !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #d1d5db !important;
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-200:hover {
+  background-color: #303030 !important;
+}
+
+.dark .hover\:border-red-200:hover,
+.dark .hover\:border-gray-300:hover {
+  border-color: #ef4444 !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1a1a1a;
+  color: #f3f4f6;
+  border-color: #3a3a3a;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af;
+}
+
+.dark .bg-red-50 {
+  background-color: #3f1d1d !important;
+}
+
+.dark .bg-green-50 {
+  background-color: #10281c !important;
+}
+
+.dark .bg-yellow-50 {
+  background-color: #3a2c12 !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: #2a2a2a !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: #2b1d3f !important;
+}

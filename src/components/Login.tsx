@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useSession } from '../context/SessionProvider';
 import { ApiError } from '../lib/auth-client';
 import { UserRole } from '../types/session';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface LoginProps {
   onBack: () => void;
@@ -17,7 +18,7 @@ export function Login({ onBack, onSwitchToRegister, onSuccess }: LoginProps) {
   const [userType, setUserType] = useState<UserRole>('user');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useSession();
+  const { login, loginWithGoogle } = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +43,25 @@ export function Login({ onBack, onSwitchToRegister, onSuccess }: LoginProps) {
         setError(payload?.error || payload?.message || err.message || 'Credenciais inválidas');
       } else {
         setError('Erro de conexão com o servidor');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async (credential: string) => {
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await loginWithGoogle({ credential, type: userType });
+      onSuccess?.();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const payload = err.payload as { message?: string; error?: string } | null;
+        setError(payload?.error || payload?.message || err.message || 'Falha no login com Google');
+      } else {
+        setError('Falha no login com Google');
       }
     } finally {
       setIsSubmitting(false);
@@ -153,6 +173,21 @@ export function Login({ onBack, onSwitchToRegister, onSuccess }: LoginProps) {
           >
             {isSubmitting ? 'A entrar...' : 'Entrar'}
           </button>
+
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-gray-50 px-2 text-gray-500">ou</span>
+            </div>
+          </div>
+
+          <GoogleAuthButton
+            text="signin_with"
+            onCredential={handleGoogleLogin}
+            disabled={isSubmitting}
+          />
         </form>
 
         {/* Forgot Password */}
