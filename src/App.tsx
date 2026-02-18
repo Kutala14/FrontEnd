@@ -9,6 +9,7 @@ import { SearchPage } from './components/SearchPage';
 import { RestaurantBooking } from './components/RestaurantBooking';
 import { RestaurantReview } from './components/RestaurantReview';
 import { RestaurantReviewsPage } from './components/RestaurantReviewsPage';
+import { RestaurantGalleryPage } from './components/RestaurantGalleryPage';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { RestaurantDashboardComplete } from './components/RestaurantDashboardComplete';
@@ -220,7 +221,7 @@ function RestaurantBookingRoute({ userSession }: { userSession: UserSession | nu
   }, [apiUrl, id, stateRestaurant]);
 
   if (isLoading) {
-    return <div className="p-6 text-gray-600">A carregar restaurante...</div>;
+    return <div className="p-6 text-gray-600">A carregar hotel...</div>;
   }
 
   if (!restaurant) {
@@ -232,6 +233,7 @@ function RestaurantBookingRoute({ userSession }: { userSession: UserSession | nu
       restaurant={restaurant}
       onBack={() => navigate('/restaurants')}
       onReview={() => navigate(`/restaurants/${restaurant.id}/review`, { state: { restaurant } })}
+      onGallery={() => navigate(`/restaurants/${restaurant.id}/gallery`, { state: { restaurant } })}
       userSession={userSession}
       onRequireAuth={() => navigate('/login')}
     />
@@ -285,7 +287,7 @@ function RestaurantReviewRoute({ userSession }: { userSession: UserSession | nul
   }, [apiUrl, id, stateRestaurant]);
 
   if (isLoading) {
-    return <div className="p-6 text-gray-600">A carregar restaurante...</div>;
+    return <div className="p-6 text-gray-600">A carregar hotel...</div>;
   }
 
   if (!restaurant) {
@@ -322,7 +324,7 @@ export default function App() {
   const { theme, toggleTheme } = useTheme();
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const isRestaurantUser = userSession?.type === 'restaurant' && userSession.restaurantId;
+  const isRestaurantUser = userSession?.type === 'hotel' && userSession.restaurantId;
 
   useEffect(() => {
     if (sessionStatus === 'loading') return;
@@ -526,10 +528,10 @@ export default function App() {
                 <p className="text-sm text-gray-500">{userSession.email}</p>
                 <span
                   className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${
-                    userSession.type === 'restaurant' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                    userSession.type === 'hotel' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                   }`}
                 >
-                  {userSession.type === 'restaurant' ? 'Restaurante' : 'Utilizador'}
+                  {userSession.type === 'hotel' ? 'Hotel' : 'Utilizador'}
                 </span>
               </div>
 
@@ -597,6 +599,7 @@ export default function App() {
             }
           />
           <Route path="/restaurants/:id/booking" element={<RestaurantBookingRoute userSession={userSession} />} />
+          <Route path="/restaurants/:id/gallery" element={<RestaurantGalleryPage />} />
           <Route path="/restaurants/:id/reviews" element={<RestaurantReviewsPage />} />
           <Route path="/restaurants/:id/review" element={<RestaurantReviewRoute userSession={userSession} />} />
           <Route

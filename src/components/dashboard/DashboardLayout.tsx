@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Briefcase,
   Compass,
+  Image,
   Moon,
   Sun
 } from 'lucide-react';
@@ -26,11 +27,12 @@ interface DashboardLayoutProps {
 
 const menuItems = [
   { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'restaurant', label: 'Meu Restaurante', icon: Store },
+  { id: 'restaurant', label: 'Meu Hotel', icon: Store },
   { id: 'menu', label: 'Menu', icon: MenuIcon },
   { id: 'bookings', label: 'Reservas', icon: Calendar },
   { id: 'experiences', label: 'Experiências', icon: Compass },
   { id: 'services', label: 'Serviços', icon: Briefcase },
+  { id: 'gallery', label: 'Galeria', icon: Image },
   { id: 'reviews', label: 'Avaliações', icon: Star },
 ];
 
@@ -66,7 +68,7 @@ export function DashboardLayout({
           <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-red-50 to-yellow-50 rounded-xl">
             <Store className="size-5 text-red-600 flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-600">Restaurante</p>
+              <p className="text-xs text-gray-600">Hotel</p>
               <p className="font-semibold text-sm text-gray-900 truncate">{restaurantName}</p>
             </div>
           </div>
@@ -148,7 +150,7 @@ export function DashboardLayout({
               <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-red-50 to-yellow-50 rounded-xl">
                 <Store className="size-5 text-red-600" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-600">Restaurante</p>
+                  <p className="text-xs text-gray-600">Hotel</p>
                   <p className="font-semibold text-sm text-gray-900 truncate">{restaurantName}</p>
                 </div>
               </div>

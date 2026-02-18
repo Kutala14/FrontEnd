@@ -35,7 +35,7 @@ interface Cousine {
 
 export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) {
   const { loginWithGoogle } = useSession();
-  const [userType, setUserType] = useState<'user' | 'restaurant'>('user');
+  const [userType, setUserType] = useState<'user' | 'hotel'>('user');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -76,8 +76,8 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
       return;
     }
 
-    if (userType === 'restaurant' && (!formData.phone || !formData.location)) {
-      setError('Restaurantes devem preencher todos os campos');
+    if (userType === 'hotel' && (!formData.phone || !formData.location)) {
+      setError('Hotéis devem preencher todos os campos');
       setIsSubmitting(false);
       return;
     }
@@ -93,9 +93,9 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          phone: userType === 'restaurant' ? formData.phone : undefined,
-          location: userType === 'restaurant' ? formData.location : undefined,
-          cuisine_id: userType === 'restaurant' && formData.cuisine ? Number(formData.cuisine) : undefined,
+          phone: userType === 'hotel' ? formData.phone : undefined,
+          location: userType === 'hotel' ? formData.location : undefined,
+          cuisine_id: userType === 'hotel' && formData.cuisine ? Number(formData.cuisine) : undefined,
           type: userType,
         })
       });
@@ -117,8 +117,8 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
   const handleGoogleRegister = async (credential: string) => {
     setError('');
 
-    if (userType === 'restaurant' && (!formData.phone || !formData.location)) {
-      setError('Para registar restaurante com Google, preencha telefone e localização.');
+    if (userType === 'hotel' && (!formData.phone || !formData.location)) {
+      setError('Para registar hotel com Google, preencha telefone e localização.');
       return;
     }
 
@@ -128,9 +128,9 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
         credential,
         type: userType,
         name: formData.name || undefined,
-        phone: userType === 'restaurant' ? formData.phone : undefined,
-        location: userType === 'restaurant' ? formData.location : undefined,
-        cuisine_id: userType === 'restaurant' && formData.cuisine ? Number(formData.cuisine) : undefined,
+        phone: userType === 'hotel' ? formData.phone : undefined,
+        location: userType === 'hotel' ? formData.location : undefined,
+        cuisine_id: userType === 'hotel' && formData.cuisine ? Number(formData.cuisine) : undefined,
       });
 
       setSuccess(true);
@@ -207,14 +207,14 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
           </button>
           <button
             type="button"
-            onClick={() => setUserType('restaurant')}
+            onClick={() => setUserType('hotel')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-              userType === 'restaurant'
+              userType === 'hotel'
                 ? 'bg-white text-red-600 shadow-sm'
                 : 'text-gray-600'
             }`}
           >
-            Restaurante
+            Hotel
           </button>
         </div>
 
@@ -231,10 +231,10 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
             {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {userType === 'restaurant' ? 'Nome do Restaurante' : 'Nome Completo'} *
+                {userType === 'hotel' ? 'Nome do Hotel' : 'Nome Completo'} *
               </label>
               <div className="relative">
-                {userType === 'restaurant' ? (
+                {userType === 'hotel' ? (
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
                 ) : (
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
@@ -243,7 +243,7 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder={userType === 'restaurant' ? 'Restaurante Sabor Angolano' : 'João Silva'}
+                  placeholder={userType === 'hotel' ? 'Hotel Sabor Angolano' : 'João Silva'}
                   className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
               </div>
@@ -267,7 +267,7 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
             </div>
 
             {/* Restaurant-specific fields */}
-            {userType === 'restaurant' && (
+            {userType === 'hotel' && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

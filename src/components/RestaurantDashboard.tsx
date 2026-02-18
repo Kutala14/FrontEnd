@@ -146,7 +146,7 @@ export function RestaurantDashboard({ onBack, restaurantId, restaurantName }: Re
           <span>Voltar</span>
         </button>
 
-        <h1 className="text-2xl font-bold mb-1">Dashboard do Restaurante</h1>
+        <h1 className="text-2xl font-bold mb-1">Dashboard do Hotel</h1>
         <p className="text-white/90">{restaurantName}</p>
       </div>
 
@@ -239,7 +239,7 @@ export function RestaurantDashboard({ onBack, restaurantId, restaurantName }: Re
                 <h3 className="font-semibold text-gray-900 mb-1">Nenhuma reserva encontrada</h3>
                 <p className="text-sm text-gray-500">
                   {filter === 'all'
-                    ? 'Ainda não há reservas para o seu restaurante'
+                    ? 'Ainda não há reservas para o seu hotel'
                     : `Não há reservas ${filter === 'pending' ? 'pendentes' : filter === 'confirmed' ? 'confirmadas' : 'canceladas'}`}
                 </p>
               </div>

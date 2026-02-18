@@ -110,7 +110,7 @@ export function DashboardOverview({ restaurantId }: DashboardOverviewProps) {
       {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Visão geral do seu restaurante</p>
+        <p className="text-gray-600">Visão geral do seu hotel</p>
       </div>
 
       {/* Stats Grid */}

@@ -95,7 +95,7 @@ export function Experiences() {
 
   const getEndpoint = (path: string) => (apiUrl ? `${apiUrl}${path}` : `/api${path}`);
 
-  const isRestaurantUser = user?.type === 'restaurant';
+  const isRestaurantUser = user?.type === 'hotel';
 
   const loadExperiences = async () => {
     setIsLoading(true);

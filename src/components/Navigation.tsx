@@ -9,7 +9,7 @@ export function Navigation({ currentPath }: NavigationProps) {
   const navItems = [
     { path: '/', label: 'Início', icon: Home },
     { path: '/explore', label: 'Explorar', icon: Compass },
-    { path: '/restaurants', label: 'Restaurantes', icon: UtensilsCrossed },
+    { path: '/restaurants', label: 'Hotéis', icon: UtensilsCrossed },
     { path: '/experiences', label: 'Experiências', icon: Star },
   ];
 

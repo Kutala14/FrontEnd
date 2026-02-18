@@ -177,7 +177,7 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
           onClick={onBack}
           className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
         >
-          Voltar ao restaurante
+          Voltar ao hotel
         </button>
       </div>
     </div>
@@ -192,13 +192,13 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
         </div>
         <h2 className="text-2xl font-bold mb-2">Obrigado pela sua avaliação!</h2>
         <p className="text-gray-600 mb-6 max-w-lg">
-          A sua opinião ajuda outros viajantes a descobrirem experiências autênticas e apoia os restaurantes
+          A sua opinião ajuda outros viajantes a descobrirem experiências autênticas e apoia os hotéis
           a melhorarem continuamente.
         </p>
 
         <div className="w-full max-w-lg bg-gray-50 rounded-2xl p-4 text-left space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Restaurante</span>
+            <span className="text-gray-500">Hotel</span>
             <span className="font-medium">{restaurant.name}</span>
           </div>
           <div className="flex justify-between text-sm">
@@ -224,7 +224,7 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
             onClick={onBack}
             className="w-full bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors"
           >
-            Voltar ao restaurante
+            Voltar ao hotel
           </button>
           <button
             onClick={onGoHome}
@@ -370,7 +370,7 @@ export function RestaurantReview({ restaurant, onBack, onGoHome, userSession, on
               <p className="text-sm text-red-600 text-center">{submitError}</p>
             )}
             <p className="text-xs text-gray-500 text-center">
-              A sua avaliação pode ser destacada no perfil do restaurante e no dashboard do parceiro.
+              A sua avaliação pode ser destacada no perfil do hotel e no dashboard do parceiro.
             </p>
           </form>
         </div>

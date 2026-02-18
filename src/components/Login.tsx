@@ -105,14 +105,14 @@ export function Login({ onBack, onSwitchToRegister, onSuccess }: LoginProps) {
           </button>
           <button
             type="button"
-            onClick={() => setUserType('restaurant')}
+            onClick={() => setUserType('hotel')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
-              userType === 'restaurant'
+              userType === 'hotel'
                 ? 'bg-white text-red-600 shadow-sm'
                 : 'text-gray-600'
             }`}
           >
-            Restaurante
+            Hotel
           </button>
         </div>
 

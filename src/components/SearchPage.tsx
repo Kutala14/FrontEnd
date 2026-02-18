@@ -168,7 +168,7 @@ export function SearchPage({ initialQuery = '', onSelectDestination, onSelectRes
     <div className="px-4 py-6 space-y-5">
       <div>
         <h2 className="text-2xl font-bold mb-1">Pesquisa</h2>
-        <p className="text-gray-600">Encontre destinos, restaurantes e experiências</p>
+        <p className="text-gray-600">Encontre destinos, hotéis e experiências</p>
       </div>
 
       <div className="relative">
@@ -240,7 +240,7 @@ export function SearchPage({ initialQuery = '', onSelectDestination, onSelectRes
 
       {!isLoading && restaurantResults.length > 0 && (
         <section className="space-y-3">
-          <h3 className="font-semibold">Restaurantes ({restaurantResults.length})</h3>
+          <h3 className="font-semibold">Hotéis ({restaurantResults.length})</h3>
           <div className="space-y-3">
             {restaurantResults.slice(0, 6).map((restaurant) => (
               <div

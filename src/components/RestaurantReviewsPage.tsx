@@ -33,7 +33,7 @@ export function RestaurantReviewsPage() {
 
   useEffect(() => {
     if (!restaurantId || Number.isNaN(restaurantId)) {
-      setErrorMessage('Restaurante inválido.');
+      setErrorMessage('Hotel inválido.');
       setIsLoading(false);
       return;
     }
@@ -60,7 +60,7 @@ export function RestaurantReviewsPage() {
         ]);
 
         if (!restaurantResponse.ok) {
-          throw new Error('Restaurante não encontrado.');
+          throw new Error('Hotel não encontrado.');
         }
 
         if (!reviewsResponse.ok) {
@@ -72,7 +72,7 @@ export function RestaurantReviewsPage() {
 
         setRestaurant({
           id: Number(restaurantPayload.id),
-          name: restaurantPayload.name || 'Restaurante',
+          name: restaurantPayload.name || 'Hotel',
         });
 
         const sortedReviews = (Array.isArray(reviewsPayload) ? reviewsPayload : []).sort(
@@ -102,12 +102,12 @@ export function RestaurantReviewsPage() {
         className="inline-flex items-center gap-2 text-gray-600"
       >
         <ArrowLeft className="size-5" />
-        Voltar aos restaurantes
+        Voltar aos hotéis
       </button>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-4">
         <h1 className="text-2xl font-bold">Avaliações</h1>
-        <p className="text-sm text-gray-600 mt-1">{restaurant?.name || 'Restaurante'}</p>
+        <p className="text-sm text-gray-600 mt-1">{restaurant?.name || 'Hotel'}</p>
 
         {!isLoading && !errorMessage && (
           <div className="mt-4 flex items-center justify-between">
@@ -128,7 +128,7 @@ export function RestaurantReviewsPage() {
 
       {!isLoading && !errorMessage && reviews.length === 0 && (
         <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-600">
-          Ainda não há avaliações para este restaurante.
+          Ainda não há avaliações para este hotel.
         </div>
       )}
 
@@ -159,7 +159,7 @@ export function RestaurantReviewsPage() {
 
               {review.response && (
                 <div className="mt-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-                  <p className="text-xs font-semibold text-gray-700 mb-1">Resposta do restaurante</p>
+                  <p className="text-xs font-semibold text-gray-700 mb-1">Resposta do hotel</p>
                   <p className="text-sm text-gray-700">{review.response}</p>
                 </div>
               )}

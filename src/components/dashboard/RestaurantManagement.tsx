@@ -67,7 +67,7 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
       ]);
 
       if (!restaurantResponse.ok) {
-        throw new Error('Erro ao buscar restaurante');
+        throw new Error('Erro ao buscar hotel');
       }
 
       const data = await restaurantResponse.json();
@@ -92,7 +92,7 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
 
     } catch (error) {
       console.error(error);
-      setSaveMessage({ type: 'error', text: 'Erro ao carregar restaurante' });
+      setSaveMessage({ type: 'error', text: 'Erro ao carregar hotel' });
     }
   };
 
@@ -123,7 +123,7 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao atualizar restaurante");
+        throw new Error("Erro ao atualizar hotel");
       }
 
       setSaveMessage({ type: 'success', text: 'Dados guardados com sucesso 🔥' });
@@ -166,8 +166,8 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
       {/* Header */}
       <div>
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Meu Restaurante</h1>
-          <p className="text-gray-600">Gerencie as informações do seu restaurante</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Meu Hotel</h1>
+          <p className="text-gray-600">Gerencie as informações do seu hotel</p>
         </div>
       </div>
 
@@ -184,7 +184,7 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
 
       {/* Image Upload */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-bold text-lg mb-4">Imagem do Restaurante</h3>
+        <h3 className="font-bold text-lg mb-4">Imagem do Hotel</h3>
         <div className="space-y-4">
           {restaurantData.image ? (
             <div className="relative w-full h-48 rounded-xl overflow-hidden">
@@ -222,14 +222,14 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome do Restaurante *
+              Nome do Hotel *
             </label>
             <input
               type="text"
               value={restaurantData.name}
               onChange={(e) => setRestaurantData({ ...restaurantData, name: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Restaurante Sabor Angolano"
+              placeholder="Hotel Sabor Angolano"
             />
           </div>
 
@@ -331,7 +331,7 @@ export function RestaurantManagement({ restaurantId }: RestaurantManagementProps
             onChange={(e) => setRestaurantData({ ...restaurantData, description: e.target.value })}
             rows={4}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-            placeholder="Descreva o seu restaurante, o ambiente, a experiência gastronómica..."
+            placeholder="Descreva o seu hotel, o ambiente, a experiência gastronómica..."
           />
         </div>
       </div>

@@ -248,7 +248,7 @@ export function ReviewsManagement({ restaurantId }: ReviewsManagementProps) {
           {review.response && (
             <div className="bg-gray-100 p-3 rounded mt-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold">Resposta do Restaurante</p>
+                <p className="text-sm font-semibold">Resposta do Hotel</p>
                 <button
                   onClick={() => handleDeleteResponse(review.id)}
                   className="text-xs text-red-600 hover:text-red-700"

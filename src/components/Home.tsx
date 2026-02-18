@@ -90,7 +90,7 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProp
         const response = await fetch(endpoint);
 
         if (!response.ok) {
-          throw new Error('Erro ao carregar restaurantes');
+          throw new Error('Erro ao carregar hotéis');
         }
 
         const data = await response.json();
@@ -98,14 +98,14 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProp
           id: item.id,
           name: item.name,
           image: item.image || defaultImage,
-          cuisine: item.cuisine || 'Restaurante',
+          cuisine: item.cuisine || 'Hotel',
           rating: Number(item.rating || 0),
           specialties: Array.isArray(item.specialties) ? item.specialties : [],
         }));
 
         setHomeRestaurants(mapped.slice(0, 10));
       } catch {
-        setRestaurantsError('Não foi possível carregar restaurantes.');
+        setRestaurantsError('Não foi possível carregar hotéis.');
         setHomeRestaurants([]);
       } finally {
         setIsLoadingRestaurants(false);
@@ -122,7 +122,7 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProp
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-gray-400" />
         <input
           type="text"
-          placeholder="Pesquisar destinos, restaurantes..."
+          placeholder="Pesquisar destinos, hotéis..."
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           onKeyDown={(event) => {
@@ -167,10 +167,10 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProp
         </div>
       </div>
 
-      {/* Restaurantes em destaque */}
+      {/* Hotéis em destaque */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold">Restaurantes</h3>
+          <h3 className="font-semibold">Hotéis</h3>
           <button
             onClick={() => onNavigate('/restaurants')}
             className="text-sm text-red-600 flex items-center gap-1"
@@ -180,7 +180,7 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProp
           </button>
         </div>
 
-        {isLoadingRestaurants && <p className="text-sm text-gray-600">A carregar restaurantes...</p>}
+        {isLoadingRestaurants && <p className="text-sm text-gray-600">A carregar hotéis...</p>}
         {!isLoadingRestaurants && restaurantsError && <p className="text-sm text-red-600">{restaurantsError}</p>}
 
         {!isLoadingRestaurants && !restaurantsError && (

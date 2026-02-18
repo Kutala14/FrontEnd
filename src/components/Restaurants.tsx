@@ -44,7 +44,7 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
         });
 
         if (!response.ok) {
-          throw new Error('Erro ao buscar restaurantes');
+          throw new Error('Erro ao buscar hotéis');
         }
 
         const data = await response.json();
@@ -52,7 +52,7 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
 
       } catch (err) {
         console.error(err);
-        setError('Erro ao carregar restaurantes');
+        setError('Erro ao carregar hotéis');
       } finally {
         setLoading(false);
       }
@@ -86,7 +86,7 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
   if (loading) {
     return (
       <div className="p-6 text-center text-gray-600">
-        Carregando restaurantes...
+        Carregando hotéis...
       </div>
     );
   }
@@ -103,7 +103,7 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
     <div className="px-4 py-6 space-y-4">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold mb-1">Restaurantes</h2>
+        <h2 className="text-2xl font-bold mb-1">Hotéis</h2>
         <p className="text-gray-600">
           Os melhores lugares para comer em Angola
         </p>
@@ -130,8 +130,8 @@ export function Restaurants({ onSelectRestaurant }: RestaurantsProps) {
       <div className="text-sm text-gray-600">
         {filteredRestaurants.length}{' '}
         {filteredRestaurants.length === 1
-          ? 'restaurante'
-          : 'restaurantes'}
+          ? 'hotel'
+          : 'hotéis'}
       </div>
 
       {/* Restaurants List */}

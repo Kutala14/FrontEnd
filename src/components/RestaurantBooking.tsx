@@ -9,6 +9,7 @@ interface RestaurantBookingProps {
   restaurant: Restaurant;
   onBack: () => void;
   onReview: () => void;
+  onGallery: () => void;
   userSession: UserSession | null;
   onRequireAuth: () => void;
 }
@@ -38,7 +39,7 @@ interface RestaurantService {
   features: string[];
 }
 
-export function RestaurantBooking({ restaurant, onBack, onReview, userSession, onRequireAuth }: RestaurantBookingProps) {
+export function RestaurantBooking({ restaurant, onBack, onReview, onGallery, userSession, onRequireAuth }: RestaurantBookingProps) {
   const { fetchWithAuth } = useSession();
   const [bookingData, setBookingData] = useState({
     date: '',
@@ -84,7 +85,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
         setMenuCategories(Array.isArray(data.categories) ? data.categories : []);
         setMenuItems(Array.isArray(data.items) ? data.items : []);
       } catch {
-        setMenuError('Não foi possível carregar o menu deste restaurante.');
+        setMenuError('Não foi possível carregar o menu deste hotel.');
       } finally {
         setMenuLoading(false);
       }
@@ -107,7 +108,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
         const data = await response.json();
         setServices(Array.isArray(data.items) ? data.items : []);
       } catch {
-        setServicesError('Não foi possível carregar os serviços deste restaurante.');
+        setServicesError('Não foi possível carregar os serviços deste hotel.');
       } finally {
         setServicesLoading(false);
       }
@@ -168,7 +169,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
     <div className="px-4 py-10 text-center space-y-4">
       <h2 className="text-2xl font-bold">Entre na sua conta</h2>
       <p className="text-gray-600">
-        É necessário iniciar sessão para reservar uma mesa ou avaliar um restaurante.
+        É necessário iniciar sessão para reservar uma mesa ou avaliar um hotel.
       </p>
       <div className="flex flex-col gap-3 max-w-sm mx-auto">
         <button
@@ -181,7 +182,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
           onClick={onBack}
           className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
         >
-          Voltar aos restaurantes
+          Voltar aos hotéis
         </button>
       </div>
     </div>
@@ -200,7 +201,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
 
         <div className="w-full max-w-md bg-gray-50 rounded-xl p-4 mb-6 space-y-3">
           <div className="flex justify-between">
-            <span className="text-gray-600">Restaurante:</span>
+            <span className="text-gray-600">Hotel:</span>
             <span className="font-medium">{restaurant.name}</span>
           </div>
           <div className="flex justify-between">
@@ -236,14 +237,14 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
             onClick={onBack}
             className="w-full bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors"
           >
-            Voltar aos Restaurantes
+            Voltar aos Hotéis
           </button>
           <button
             onClick={onReview}
             className="w-full bg-red-600 text-white py-3 rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
           >
             <PenSquare className="size-5" />
-            Avaliar este Restaurante
+            Avaliar este Hotel
           </button>
         </div>
       </div>
@@ -310,6 +311,14 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
           >
             Escrever uma Avaliação
           </button>
+
+          <button
+            type="button"
+            onClick={onGallery}
+            className="inline-flex items-center justify-center gap-2 bg-black/20 text-white font-semibold py-3 rounded-xl hover:bg-black/30 transition-colors"
+          >
+            Ver Galeria do Hotel
+          </button>
         </div>
       </div>
 
@@ -330,7 +339,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
             {!menuLoading && menuError && <p className="text-sm text-red-600">{menuError}</p>}
 
             {!menuLoading && !menuError && menuItems.length === 0 && (
-              <p className="text-sm text-gray-600">Este restaurante ainda não publicou itens no menu.</p>
+              <p className="text-sm text-gray-600">Este hotel ainda não publicou itens no menu.</p>
             )}
 
             {!menuLoading && !menuError && menuCategories.map((category) => {
@@ -380,7 +389,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
             {!servicesLoading && servicesError && <p className="text-sm text-red-600">{servicesError}</p>}
 
             {!servicesLoading && !servicesError && services.length === 0 && (
-              <p className="text-sm text-gray-600">Este restaurante ainda não publicou serviços adicionais.</p>
+              <p className="text-sm text-gray-600">Este hotel ainda não publicou serviços adicionais.</p>
             )}
 
             {!servicesLoading && !servicesError && services.length > 0 && (
@@ -547,7 +556,7 @@ export function RestaurantBooking({ restaurant, onBack, onReview, userSession, o
           </button>
 
           <p className="text-xs text-gray-500 text-center">
-            Ao confirmar, você concorda em compartilhar suas informações com o restaurante.
+            Ao confirmar, você concorda em compartilhar suas informações com o hotel.
           </p>
               </form>
             )}
