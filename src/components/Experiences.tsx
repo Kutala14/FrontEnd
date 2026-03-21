@@ -53,8 +53,6 @@ interface ExperienceParticipation {
   created_at: string | null;
 }
 
-const defaultImage =
-  'https://images.unsplash.com/photo-1561789706-b21375e5392e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
 const weekdayOptions = [
   { key: 'mon', label: 'Seg' },
   { key: 'tue', label: 'Ter' },
@@ -600,7 +598,7 @@ export function Experiences() {
               >
                 <div className="relative h-48">
                   <ImageWithFallback
-                    src={experience.image_url || defaultImage}
+                    src={experience.image_url || ''}
                     alt={experience.title}
                     className="w-full h-full object-cover"
                   />

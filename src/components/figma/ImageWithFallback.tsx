@@ -11,6 +11,18 @@ export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElemen
   }
 
   const { src, alt, style, className, ...rest } = props
+  const hasSource = typeof src === 'string' ? src.trim().length > 0 : Boolean(src)
+
+  if (!hasSource) {
+    return (
+      <div
+        className={`inline-flex items-center justify-center bg-gray-100 text-gray-500 text-sm ${className ?? ''}`}
+        style={style}
+      >
+        Sem imagem
+      </div>
+    )
+  }
 
   return didError ? (
     <div

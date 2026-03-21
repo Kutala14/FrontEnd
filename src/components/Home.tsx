@@ -28,19 +28,9 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch, onSelectRe
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const defaultImage = 'https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
-  const categoryFallbackImages: Record<string, string> = {
-    Praia: 'https://images.unsplash.com/photo-1658872739589-0691c8039617?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    Natureza: 'https://images.unsplash.com/photo-1636380778575-34508e634145?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    Cultura: 'https://images.unsplash.com/photo-1515657241610-a6b33f0f6c5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    Aventura: 'https://images.unsplash.com/photo-1612222780225-04d3384823fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    'Vida Selvagem': 'https://images.unsplash.com/photo-1729359035276-189519a4b072?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-    Cidade: 'https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  };
-
   const resolveExploreImage = (imageUrl: string | null | undefined, category: string) => {
     if (imageUrl && imageUrl.trim()) return imageUrl;
-    return categoryFallbackImages[category] || defaultImage;
+    return '';
   };
 
   useEffect(() => {
@@ -98,7 +88,7 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch, onSelectRe
         const mapped = (Array.isArray(data) ? data : []).map((item: any) => ({
           id: item.id,
           name: item.name,
-          image: item.image || defaultImage,
+          image: item.image || item.image_url || '',
           cuisine: item.cuisine || 'Hotel',
           rating: Number(item.rating || 0),
           specialties: Array.isArray(item.specialties) ? item.specialties : [],

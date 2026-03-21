@@ -36,17 +36,6 @@ interface ExperienceItem {
   max_group_size?: number | null;
 }
 
-const defaultImage =
-  'https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
-
-const categoryFallbackImages: Record<string, string> = {
-  Praia: 'https://images.unsplash.com/photo-1658872739589-0691c8039617?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  Natureza: 'https://images.unsplash.com/photo-1636380778575-34508e634145?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  Cultura: 'https://images.unsplash.com/photo-1515657241610-a6b33f0f6c5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  Aventura: 'https://images.unsplash.com/photo-1612222780225-04d3384823fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'Vida Selvagem': 'https://images.unsplash.com/photo-1729359035276-189519a4b072?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  Cidade: defaultImage,
-};
 
 const normalizeCategory = (value: string | null | undefined) => {
   const normalized = String(value || '').trim().toLowerCase();
@@ -61,9 +50,8 @@ const normalizeCategory = (value: string | null | undefined) => {
 };
 
 const resolveExploreImage = (imageUrl: string | null | undefined, category: string) => {
-  const normalizedCategory = normalizeCategory(category);
   if (imageUrl && imageUrl.trim()) return imageUrl;
-  return categoryFallbackImages[normalizedCategory] || defaultImage;
+  return '';
 };
 
 export function SearchPage({ initialQuery = '', onSelectDestination, onSelectRestaurant, onOpenExperiences }: SearchPageProps) {
@@ -249,7 +237,7 @@ export function SearchPage({ initialQuery = '', onSelectDestination, onSelectRes
               >
                 <div className="relative h-48">
                   <ImageWithFallback
-                    src={restaurant.image || defaultImage}
+                    src={restaurant.image || ''}
                     alt={restaurant.name}
                     className="w-full h-full object-cover"
                   />
@@ -330,7 +318,7 @@ export function SearchPage({ initialQuery = '', onSelectDestination, onSelectRes
               >
                 <div className="relative h-48">
                   <ImageWithFallback
-                    src={experience.image_url || defaultImage}
+                    src={experience.image_url || ''}
                     alt={experience.title}
                     className="w-full h-full object-cover"
                   />
