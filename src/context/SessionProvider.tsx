@@ -4,6 +4,7 @@ import { UserRole, UserSession } from '../types/session';
 
 const ACCESS_TOKEN_STORAGE_KEY = 'kutala_access_token';
 const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
+const API_KEY_HEADER = (import.meta.env.VITE_API_KEY_HEADER || 'x-api-key').trim();
 
 interface SessionContextValue {
   status: 'loading' | 'guest' | 'authenticated';
@@ -79,7 +80,7 @@ function useSessionContextValue(): SessionContextValue {
 
     const send = (token: string | null) => {
       const headers = new Headers(init.headers || {});
-      headers.set('x-api-key', API_KEY);
+      headers.set(API_KEY_HEADER, API_KEY);
 
       if (!token) return fetch(input, { ...init, headers });
 

@@ -2,6 +2,7 @@ import { UserRole, UserSession } from '../types/session';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
+const API_KEY_HEADER = (import.meta.env.VITE_API_KEY_HEADER || 'x-api-key').trim();
 
 function getEndpoint(path: string) {
   if (!API_BASE) return path;
@@ -35,7 +36,7 @@ async function request<TResponse>(path: string, options: RequestOptions = {}): P
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'x-api-key': API_KEY,
+        [API_KEY_HEADER]: API_KEY,
         ...options.headers,
       },
       ...options,
@@ -151,7 +152,7 @@ export async function fetchWithAccessToken(input: RequestInfo | URL, init: Reque
 
   if (!token) {
     const headers = new Headers(init.headers || {});
-    headers.set('x-api-key', API_KEY);
+    headers.set(API_KEY_HEADER, API_KEY);
 
     return fetch(input, {
       ...init,
@@ -161,7 +162,7 @@ export async function fetchWithAccessToken(input: RequestInfo | URL, init: Reque
 
   const headers = new Headers(init.headers || {});
   headers.set('Authorization', `Bearer ${token}`);
-  headers.set('x-api-key', API_KEY);
+  headers.set(API_KEY_HEADER, API_KEY);
 
   return fetch(input, {
     ...init,

@@ -476,7 +476,7 @@ export default function App() {
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-20">
+                <div className="absolute right-0 top-full mt-2 z-20 w-[28rem] max-w-[calc(100vw-1rem)] min-h-[16rem] bg-white rounded-xl shadow-lg border border-gray-200 py-2">
                   <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
                     <p className="font-semibold text-gray-900">Notificações</p>
                     <button onClick={markAllNotificationsAsRead} className="text-xs text-red-600 hover:text-red-700">
@@ -484,9 +484,11 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div className="max-h-80 overflow-y-auto">
+                  <div className="max-h-80 min-h-[13rem] overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <p className="px-4 py-4 text-sm text-gray-500">Sem notificações</p>
+                      <div className="h-full min-h-[13rem] px-4 py-4 flex items-center justify-center">
+                        <p className="text-sm text-gray-500 text-center">Sem notificações</p>
+                      </div>
                     ) : (
                       notifications.map((item) => (
                         <button

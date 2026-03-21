@@ -18,6 +18,7 @@ import { GoogleAuthButton } from './GoogleAuthButton';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
+const API_KEY_HEADER = (import.meta.env.VITE_API_KEY_HEADER || 'x-api-key').trim();
 
 function getEndpoint(path: string) {
   if (!API_BASE) return path;
@@ -31,7 +32,7 @@ function getApiHeaders() {
 
   return {
     'Content-Type': 'application/json',
-    'x-api-key': API_KEY,
+    [API_KEY_HEADER]: API_KEY,
   };
 }
 
