@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Star, ChevronRight, Search } from 'lucide-react';
+import { MapPin, Star, ChevronRight, Search, Sparkles, ArrowRight, Compass } from 'lucide-react';
 import { Destination } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
@@ -131,16 +131,53 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch, onSelectRe
       </div>
 
       {/* Hero Section */}
-      <div className="relative h-48 rounded-2xl overflow-hidden">
+      <div className="relative mx-[10px] h-72 sm:h-80 lg:h-96 rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]">
         <ImageWithFallback
           src="https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdWFuZGElMjBhbmdvbGElMjBjaXR5JTIwc2t5bGluZXxlbnwxfHx8fDE3NjgwNjMxODh8MA&ixlib=rb-4.1.0&q=80&w=1080"
           alt="Angola"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <h2 className="text-2xl font-bold mb-2">Bem-vindo ao Tukula</h2>
-          <p className="text-sm opacity-90">Descubra destinos incríveis e experiências únicas</p>
+        <div className="absolute inset-0 bg-gradient-to-br from-black/88 via-black/62 to-red-950/70" />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to right, rgba(15, 23, 42, 0.78) 0%, rgba(15, 23, 42, 0.48) 42%, rgba(127, 29, 29, 0.60) 100%)' }}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(253,224,71,0.35),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(239,68,68,0.35),transparent_35%)]" />
+
+        <div className="absolute top-4 inset-x-0 px-4 sm:px-8 flex items-center justify-between text-white z-20">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md text-xs font-medium tracking-wide"
+            style={{ backgroundColor: 'rgba(2, 6, 23, 0.58)' }}
+          >
+            <Sparkles className="size-3.5" />
+            Curadoria Tukula
+          </div>
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md text-xs font-medium"
+            style={{ backgroundColor: 'rgba(2, 6, 23, 0.58)' }}
+          >
+            <Compass className="size-3.5" />
+            {featuredDestinations.length} destinos em destaque
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 text-white z-20">
+          <div className="mx-[10px] mb-[10px] px-4 py-5 sm:px-8 sm:py-6">
+            <h2 className="text-3xl sm:text-4xl font-black leading-tight mb-2 tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">Bem-vindo ao Tukula</h2>
+            <p className="text-sm sm:text-base text-white/95 max-w-2xl mb-4 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+              Descubra hotéis, experiências e destinos com um visual renovado para planejar sua próxima aventura.
+            </p>
+
+            <div className="flex items-center gap-2.5 flex-wrap mt-[10px]">
+              <div
+                className="inline-flex items-center px-3 py-2 rounded-xl backdrop-blur-md text-xs sm:text-sm font-medium text-white/95"
+                style={{ backgroundColor: 'rgba(2, 6, 23, 0.55)' }}
+              >
+                {homeRestaurants.length} hotéis disponíveis
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
