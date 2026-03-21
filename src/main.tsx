@@ -6,6 +6,9 @@
   import "./styles/theme.css";
   import { SessionProvider } from "./context/SessionProvider";
   import { ThemeProvider } from "./context/ThemeProvider";
+  import { setupApiKeyFetch } from "./lib/setupApiKeyFetch";
+
+  setupApiKeyFetch();
 
   createRoot(document.getElementById("root")!).render(
     <BrowserRouter>

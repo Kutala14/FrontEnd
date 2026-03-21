@@ -1,6 +1,7 @@
 import { UserRole, UserSession } from '../types/session';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
 
 function getEndpoint(path: string) {
   if (!API_BASE) return path;
@@ -25,11 +26,16 @@ interface RequestOptions extends RequestInit {
 async function request<TResponse>(path: string, options: RequestOptions = {}): Promise<TResponse> {
   let response: Response;
 
+  if (!API_KEY) {
+    throw new ApiError('API key nao configurada. Defina VITE_API_KEY no ficheiro .env.', 0, null);
+  }
+
   try {
     response = await fetch(getEndpoint(path), {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        'x-api-key': API_KEY,
         ...options.headers,
       },
       ...options,
@@ -116,6 +122,7 @@ export const authClient = {
     phone?: string;
     location?: string;
     cuisine_id?: number;
+    cuisine?: string;
   }) => {
     const result = await request<BackendAuthResponse>('/auth/google', {
       method: 'POST',
@@ -138,12 +145,23 @@ export const authClient = {
 };
 
 export async function fetchWithAccessToken(input: RequestInfo | URL, init: RequestInit = {}, token?: string) {
+  if (!API_KEY) {
+    throw new ApiError('API key nao configurada. Defina VITE_API_KEY no ficheiro .env.', 0, null);
+  }
+
   if (!token) {
-    return fetch(input, init);
+    const headers = new Headers(init.headers || {});
+    headers.set('x-api-key', API_KEY);
+
+    return fetch(input, {
+      ...init,
+      headers,
+    });
   }
 
   const headers = new Headers(init.headers || {});
   headers.set('Authorization', `Bearer ${token}`);
+  headers.set('x-api-key', API_KEY);
 
   return fetch(input, {
     ...init,

@@ -3,6 +3,7 @@ import { authClient } from '../lib/auth-client';
 import { UserRole, UserSession } from '../types/session';
 
 const ACCESS_TOKEN_STORAGE_KEY = 'kutala_access_token';
+const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
 
 interface SessionContextValue {
   status: 'loading' | 'guest' | 'authenticated';
@@ -16,6 +17,7 @@ interface SessionContextValue {
     phone?: string;
     location?: string;
     cuisine_id?: number;
+    cuisine?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<string | null>;
@@ -71,9 +73,16 @@ function useSessionContextValue(): SessionContextValue {
   }, [clearSession]);
 
   const fetchWithAuth = useCallback(async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    if (!API_KEY) {
+      throw new Error('API key nao configurada. Defina VITE_API_KEY no ficheiro .env.');
+    }
+
     const send = (token: string | null) => {
-      if (!token) return fetch(input, init);
       const headers = new Headers(init.headers || {});
+      headers.set('x-api-key', API_KEY);
+
+      if (!token) return fetch(input, { ...init, headers });
+
       headers.set('Authorization', `Bearer ${token}`);
       return fetch(input, { ...init, headers });
     };
@@ -108,6 +117,7 @@ function useSessionContextValue(): SessionContextValue {
     phone?: string;
     location?: string;
     cuisine_id?: number;
+    cuisine?: string;
   }) => {
     const result = await authClient.googleAuth(payload);
     applySession({ user: result.user, accessToken: result.accessToken, expiresIn: result.expiresIn });

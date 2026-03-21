@@ -558,6 +558,7 @@ export default function App() {
                   navigate(`/destination/${destination.id}`, { state: { destination } })
                 }
                 onOpenSearch={(query) => navigate('/search', { state: { query } })}
+                onSelectRestaurant={(restaurantId) => navigate(`/restaurants/${restaurantId}/booking`)}
               />
             }
           />

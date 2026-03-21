@@ -88,18 +88,34 @@ export function Explore({ onSelectDestination }: ExploreProps) {
     activities: Array.isArray(spot.activities) && spot.activities.length > 0 ? spot.activities : ['Explorar'],
   });
 
+  const buildExploreEndpoint = (includeExternal: boolean) => {
+    const base = apiUrl ? `${apiUrl}/explore/` : '/api/explore/';
+    const separator = base.includes('?') ? '&' : '?';
+    return `${base}${separator}include_external=${includeExternal ? 'true' : 'false'}`;
+  };
+
   const fetchSpots = async () => {
     setLoading(true);
     setErrorMessage('');
 
     try {
-      const endpoint = apiUrl ? `${apiUrl}/explore/` : '/api/explore/';
-      const response = await fetch(endpoint);
-      if (!response.ok) {
+      // First render local/community data immediately.
+      const localResponse = await fetch(buildExploreEndpoint(false));
+      if (!localResponse.ok) {
         throw new Error('Erro ao carregar locais da comunidade');
       }
 
-      const data = await response.json();
+      const localData = await localResponse.json();
+      setSpots(Array.isArray(localData) ? localData : []);
+      setLoading(false);
+
+      // Fetch external data afterwards, without blocking local rendering.
+      const withExternalResponse = await fetch(buildExploreEndpoint(true));
+      if (!withExternalResponse.ok) {
+        return;
+      }
+
+      const data = await withExternalResponse.json();
       setSpots(Array.isArray(data) ? data : []);
     } catch {
       setErrorMessage('Não foi possível carregar os locais publicados pela comunidade.');

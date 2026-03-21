@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly API_URL?: string;
+  readonly VITE_API_URL?: string;
+  readonly VITE_API_KEY?: string;
   // add more env variables here as needed
 }
 
@@ -16,10 +17,22 @@ import { ApiError } from '../lib/auth-client';
 import { GoogleAuthButton } from './GoogleAuthButton';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_KEY = (import.meta.env.VITE_API_KEY || '').trim();
 
 function getEndpoint(path: string) {
   if (!API_BASE) return path;
   return `${API_BASE}${path}`;
+}
+
+function getApiHeaders() {
+  if (!API_KEY) {
+    throw new Error('API key nao configurada. Defina VITE_API_KEY no ficheiro .env.');
+  }
+
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': API_KEY,
+  };
 }
 
 interface RegisterProps {
@@ -33,6 +46,8 @@ interface Cousine {
   name: string;
 }
 
+const NEW_CUISINE_OPTION = '__new_cuisine__';
+
 export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) {
   const { loginWithGoogle } = useSession();
   const [userType, setUserType] = useState<'user' | 'hotel'>('user');
@@ -45,12 +60,21 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
     location: '',
     cuisine: ''
   });
+  const [newCuisine, setNewCuisine] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cousine, setCousines] = useState<Cousine[]>([]);
+
+  const isNewCuisineSelected = formData.cuisine === NEW_CUISINE_OPTION;
+  const selectedCuisineId = userType === 'hotel' && !isNewCuisineSelected && formData.cuisine
+    ? Number(formData.cuisine)
+    : undefined;
+  const selectedCuisineName = userType === 'hotel' && isNewCuisineSelected && newCuisine.trim()
+    ? newCuisine.trim()
+    : undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,20 +106,25 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
       return;
     }
 
+    if (userType === 'hotel' && !selectedCuisineId && !selectedCuisineName) {
+      setError('Selecione um tipo de cozinha ou adicione um novo');
+      setIsSubmitting(false);
+      return;
+    }
+
     // Criar novo usuário
     try {
       const response = await fetch(getEndpoint('/auth/register'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
           password: formData.password,
           phone: userType === 'hotel' ? formData.phone : undefined,
           location: userType === 'hotel' ? formData.location : undefined,
-          cuisine_id: userType === 'hotel' && formData.cuisine ? Number(formData.cuisine) : undefined,
+          cuisine_id: selectedCuisineId,
+          cuisine: selectedCuisineName,
           type: userType,
         })
       });
@@ -108,7 +137,7 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
       setSuccess(true);
       onSuccess?.();
     } catch (error) {
-      setError('Erro de conexão com o servidor');
+      setError(error instanceof Error ? error.message : 'Erro de conexão com o servidor');
     } finally {
       setIsSubmitting(false);
     }
@@ -122,6 +151,11 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
       return;
     }
 
+    if (userType === 'hotel' && !selectedCuisineId && !selectedCuisineName) {
+      setError('Selecione um tipo de cozinha ou adicione um novo');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await loginWithGoogle({
@@ -130,7 +164,8 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
         name: formData.name || undefined,
         phone: userType === 'hotel' ? formData.phone : undefined,
         location: userType === 'hotel' ? formData.location : undefined,
-        cuisine_id: userType === 'hotel' && formData.cuisine ? Number(formData.cuisine) : undefined,
+        cuisine_id: selectedCuisineId,
+        cuisine: selectedCuisineName,
       });
 
       setSuccess(true);
@@ -150,9 +185,7 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
   const handleGetcousines = async () => {
     try {
       const response = await fetch(getEndpoint('/restaurants/cuisines'), {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: getApiHeaders()
       });
 
       if (!response.ok) {
@@ -307,7 +340,13 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
                   </label>
                   <select
                     value={formData.cuisine}
-                    onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, cuisine: value });
+                      if (value !== NEW_CUISINE_OPTION) {
+                        setNewCuisine('');
+                      }
+                    }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">Selecione...</option>
@@ -316,8 +355,19 @@ export function Register({ onBack, onSwitchToLogin, onSuccess }: RegisterProps) 
                         {cuisine.name}
                       </option>
                     ))}
+                    <option value={NEW_CUISINE_OPTION}>Outro (Adicionar novo)</option>
 
                   </select>
+                  {isNewCuisineSelected && (
+                    <input
+                      style={{ marginTop: 4 }}
+                      type="text"
+                      value={newCuisine}
+                      onChange={(e) => setNewCuisine(e.target.value)}
+                      placeholder="Digite o novo tipo de cozinha"
+                      className="mt-3 w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  )}
                 </div>
               </>
             )}

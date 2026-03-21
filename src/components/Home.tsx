@@ -7,9 +7,10 @@ interface HomeProps {
   onNavigate: (path: string) => void;
   onSelectDestination: (destination: Destination) => void;
   onOpenSearch: (query: string) => void;
+  onSelectRestaurant: (restaurantId: number) => void;
 }
 
-export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProps) {
+export function Home({ onNavigate, onSelectDestination, onOpenSearch, onSelectRestaurant }: HomeProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredDestinations, setFeaturedDestinations] = useState<Destination[]>([]);
   const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
@@ -188,7 +189,7 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch }: HomeProp
             {homeRestaurants.map((restaurant) => (
               <button
                 key={restaurant.id}
-                onClick={() => onNavigate('/restaurants')}
+                onClick={() => onSelectRestaurant(restaurant.id)}
                 className="flex-none w-[300px] h-[200px] bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-red-200 transition-colors flex flex-col"
                 style={{
                   width: '300px',
