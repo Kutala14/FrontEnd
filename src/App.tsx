@@ -26,6 +26,7 @@ export interface Destination {
   description: string;
   image: string;
   rating: number;
+  reviews: number;
   category: string;
   highlights: string[];
   activities: string[];
@@ -83,6 +84,7 @@ const mapExploreSpotToDestination = (spot: ExploreSpot): Destination => ({
   description: spot.description,
   image: resolveExploreImage(spot.image_url, spot.category || ''),
   rating: Number(spot.rating || 0),
+  reviews: Number(spot.reviews ?? spot.reviews_count ?? 0),
   category: normalizeCategory(spot.category),
   highlights: Array.isArray(spot.highlights) && spot.highlights.length > 0 ? spot.highlights : ['Local da comunidade'],
   activities: Array.isArray(spot.activities) && spot.activities.length > 0 ? spot.activities : ['Explorar'],

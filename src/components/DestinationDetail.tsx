@@ -62,7 +62,7 @@ export function DestinationDetail({ destination, onBack }: DestinationDetailProp
             <div className="flex items-center gap-1">
               <Star className="size-4 fill-yellow-400 text-yellow-400" />
               <span className="text-sm font-medium">{destination.rating}</span>
-              <span className="text-sm text-gray-500">(124 avaliações)</span>
+              <span className="text-sm text-gray-500">({destination.reviews || 0} avaliações)</span>
             </div>
           </div>
         </div>
