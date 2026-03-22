@@ -131,7 +131,7 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch, onSelectRe
       </div>
 
       {/* Hero Section */}
-      <div className="relative mx-[10px] h-72 sm:h-80 lg:h-96 rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]">
+      <div className="relative h-72 sm:h-80 lg:h-96 -mx-4 sm:mx-0 rounded-none sm:rounded-3xl overflow-hidden border border-white/20 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.65)]">
         <ImageWithFallback
           src="https://images.unsplash.com/photo-1562859422-29f5c0f4b24d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdWFuZGElMjBhbmdvbGElMjBjaXR5JTIwc2t5bGluZXxlbnwxfHx8fDE3NjgwNjMxODh8MA&ixlib=rb-4.1.0&q=80&w=1080"
           alt="Angola"
@@ -145,25 +145,29 @@ export function Home({ onNavigate, onSelectDestination, onOpenSearch, onSelectRe
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/80 to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(253,224,71,0.35),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(239,68,68,0.35),transparent_35%)]" />
 
-        <div className="absolute top-4 inset-x-0 px-4 sm:px-8 flex items-center justify-between text-white z-20">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md text-xs font-medium tracking-wide"
-            style={{ backgroundColor: 'rgba(2, 6, 23, 0.58)' }}
-          >
-            <Sparkles className="size-3.5" />
-            Curadoria Tukula
-          </div>
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md text-xs font-medium"
-            style={{ backgroundColor: 'rgba(2, 6, 23, 0.58)' }}
-          >
-            <Compass className="size-3.5" />
-            {featuredDestinations.length} destinos em destaque
+        <div className="absolute top-4 inset-x-0 z-10">
+          <div className="flex items-start justify-between gap-2.5 sm:gap-3 text-white">
+            <div
+              className="inline-flex items-center gap-2.5 px-4 py-2 backdrop-blur-xl text-xs sm:text-sm font-semibold tracking-wide"
+            >
+              <span className="inline-flex size-6 items-center justify-center rounded-full bg-white/18">
+                <Sparkles className="size-3.5 text-yellow-200" />
+              </span>
+              Curadoria Tukula
+            </div>
+            <div
+              className="inline-flex items-center gap-2.5 px-4 py-2 backdrop-blur-xl text-xs sm:text-sm font-semibold"
+            >
+              <span className="inline-flex size-6 items-center justify-center rounded-full bg-white/18">
+                <Compass className="size-3.5 text-red-100" />
+              </span>
+              {featuredDestinations.length} destinos em destaque
+            </div>
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 text-white z-20">
-          <div className="mx-[10px] mb-[10px] px-4 py-5 sm:px-8 sm:py-6">
+        <div className="absolute inset-x-0 bottom-0 text-white z-10">
+          <div className="max-w-2xl px-4 py-4">
             <h2 className="text-3xl sm:text-4xl font-black leading-tight mb-2 tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">Bem-vindo ao Tukula</h2>
             <p className="text-sm sm:text-base text-white/95 max-w-2xl mb-4 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
               Descubra hotéis, experiências e destinos com um visual renovado para planejar sua próxima aventura.
